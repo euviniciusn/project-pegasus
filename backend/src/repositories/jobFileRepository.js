@@ -29,10 +29,7 @@ export async function findById(id) {
 export async function updateStatus(id, {
   status,
   convertedKey,
-  outputMime,
   convertedSize,
-  savingsPercent,
-  warnings,
   errorMessage,
 }) {
   const fields = ['status = $2', 'updated_at = now()'];
@@ -41,10 +38,7 @@ export async function updateStatus(id, {
 
   const optional = [
     ['converted_key', convertedKey],
-    ['output_mime', outputMime],
     ['converted_size', convertedSize],
-    ['savings_percent', savingsPercent],
-    ['warnings', warnings],
     ['error_message', errorMessage],
   ];
 
@@ -72,7 +66,7 @@ export async function countByJobIdAndStatus(jobId, status) {
 
 export async function findByJobIdWithStatus(jobId) {
   const { rows } = await pool.query(
-    'SELECT id, original_name, status, converted_size, savings_percent, warnings, error_message FROM job_files WHERE job_id = $1 ORDER BY created_at',
+    'SELECT id, original_name, status, converted_size, error_message FROM job_files WHERE job_id = $1 ORDER BY created_at',
     [jobId],
   );
   return rows;

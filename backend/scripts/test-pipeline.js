@@ -29,7 +29,7 @@ function sleep(ms) {
 async function pollFileStatus(fileId) {
   for (let i = 1; i <= MAX_POLL_ATTEMPTS; i++) {
     const file = await jobFileRepo.findById(fileId);
-    const terminal = file.status === 'completed' || file.status === 'failed';
+    const terminal = file.status === 'done' || file.status === 'error';
 
     process.stdout.write(`\r  ${DIM}Polling ${i}/${MAX_POLL_ATTEMPTS} — status: ${file.status}${RESET}`);
     if (terminal) {
@@ -89,8 +89,8 @@ async function run() {
   console.log(`${BOLD}6. Waiting for worker...${RESET}`);
   const result = await pollFileStatus(jobFile.id);
 
-  if (result.status === 'failed') {
-    console.log(`\n  ${RED}File failed:${RESET} ${result.error_message}`);
+  if (result.status === 'error') {
+    console.log(`\n  ${RED}File error:${RESET} ${result.error_message}`);
     await cleanup(keysToCleanup, job.id);
     process.exit(1);
   }
@@ -98,14 +98,14 @@ async function run() {
   // 7. Print results
   keysToCleanup.push(result.converted_key);
   const updatedJob = await jobRepo.findById(job.id);
+  const savings = ((buffer.length - result.converted_size) / buffer.length * 100).toFixed(1);
 
   console.log(`\n${BOLD}7. Results${RESET}`);
   console.log(`  Status:      ${GREEN}${result.status}${RESET}`);
   console.log(`  Input:       ${buffer.length} bytes`);
   console.log(`  Output:      ${result.converted_size} bytes`);
-  console.log(`  Savings:     ${result.savings_percent}%`);
+  console.log(`  Savings:     ${savings}%`);
   console.log(`  Output key:  ${result.converted_key}`);
-  console.log(`  Warnings:    ${result.warnings?.length ? result.warnings.join(', ') : 'none'}`);
   console.log(`  Job status:  ${updatedJob.status}`);
 
   // 8. Presigned URL
