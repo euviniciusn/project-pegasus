@@ -38,7 +38,7 @@ async function processConversion(job) {
   const savingsPercent = calculateSavings(result.metadata.inputSize, result.metadata.outputSize);
 
   await jobFileRepo.updateStatus(fileId, {
-    status: 'done',
+    status: 'completed',
     convertedKey: outputKey,
     convertedSize: result.metadata.outputSize,
   });
@@ -61,7 +61,7 @@ async function handleFailure(job, err) {
   log.error({ err }, 'Conversion failed');
 
   await jobFileRepo.updateStatus(fileId, {
-    status: 'error',
+    status: 'failed',
     errorMessage: err.message,
   });
 
@@ -76,10 +76,9 @@ async function resolveJobStatus(jobId) {
   const processed = job.completed_files + job.failed_files;
   if (processed < job.total_files) return;
 
-  const finalStatus = job.failed_files === 0 ? 'done' : 'done_with_errors';
-  await jobRepo.updateStatus(jobId, finalStatus);
+  await jobRepo.updateStatus(jobId, 'completed');
 
-  logger.info({ jobId, status: finalStatus, completed: job.completed_files, failed: job.failed_files }, 'Job finished');
+  logger.info({ jobId, completed: job.completed_files, failed: job.failed_files }, 'Job finished');
 }
 
 const worker = new Worker(QUEUE_NAME, processConversion, {

@@ -29,7 +29,7 @@ function sleep(ms) {
 async function pollFileStatus(fileId) {
   for (let i = 1; i <= MAX_POLL_ATTEMPTS; i++) {
     const file = await jobFileRepo.findById(fileId);
-    const terminal = file.status === 'done' || file.status === 'error';
+    const terminal = file.status === 'completed' || file.status === 'failed';
 
     process.stdout.write(`\r  ${DIM}Polling ${i}/${MAX_POLL_ATTEMPTS} — status: ${file.status}${RESET}`);
     if (terminal) {
@@ -89,8 +89,8 @@ async function run() {
   console.log(`${BOLD}6. Waiting for worker...${RESET}`);
   const result = await pollFileStatus(jobFile.id);
 
-  if (result.status === 'error') {
-    console.log(`\n  ${RED}File error:${RESET} ${result.error_message}`);
+  if (result.status === 'failed') {
+    console.log(`\n  ${RED}File failed:${RESET} ${result.error_message}`);
     await cleanup(keysToCleanup, job.id);
     process.exit(1);
   }

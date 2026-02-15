@@ -62,14 +62,14 @@ export async function incrementFailedFiles(id) {
 
 export async function findExpiredJobs() {
   const { rows } = await pool.query(
-    "SELECT * FROM jobs WHERE expires_at < now() AND status NOT IN ('expired')",
+    "SELECT * FROM jobs WHERE expires_at < now() AND status NOT IN ('failed')",
   );
   return rows;
 }
 
 export async function markAsExpired(id) {
   const { rows } = await pool.query(
-    `UPDATE jobs SET status = 'expired', updated_at = now()
+    `UPDATE jobs SET status = 'failed', updated_at = now()
      WHERE id = $1
      RETURNING *`,
     [id],
