@@ -40,7 +40,7 @@ async function processConversion(job) {
   await jobFileRepo.updateStatus(fileId, {
     status: 'completed',
     convertedKey: outputKey,
-    convertedMime: result.metadata.mime,
+    outputMime: result.metadata.mime,
     convertedSize: result.metadata.outputSize,
     savingsPercent,
     warnings: result.metadata.warnings,
@@ -80,7 +80,7 @@ async function resolveJobStatus(jobId) {
   const processed = job.completed_files + job.failed_files;
   if (processed < job.total_files) return;
 
-  const finalStatus = job.failed_files === 0 ? 'completed' : 'completed_with_errors';
+  const finalStatus = job.failed_files === 0 ? 'completed' : 'done_with_errors';
   await jobRepo.updateStatus(jobId, finalStatus);
 
   logger.info({ jobId, status: finalStatus, completed: job.completed_files, failed: job.failed_files }, 'Job finished');

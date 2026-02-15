@@ -29,7 +29,7 @@ export async function findById(id) {
 export async function updateStatus(id, {
   status,
   convertedKey,
-  convertedMime,
+  outputMime,
   convertedSize,
   savingsPercent,
   warnings,
@@ -41,7 +41,7 @@ export async function updateStatus(id, {
 
   const optional = [
     ['converted_key', convertedKey],
-    ['converted_mime', convertedMime],
+    ['output_mime', outputMime],
     ['converted_size', convertedSize],
     ['savings_percent', savingsPercent],
     ['warnings', warnings],
