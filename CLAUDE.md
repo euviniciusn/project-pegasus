@@ -331,6 +331,50 @@ export default config;
 
 ## 5. Banco de Dados
 
+### 5.0 Schema do Banco de Dados
+
+**Enums**
+
+| Enum | Valores |
+|------|---------|
+| `job_status` | `pending`, `processing`, `completed`, `failed` |
+| `file_status` | `pending`, `processing`, `completed`, `failed` |
+
+**Tabela `jobs`**
+
+| Coluna | Tipo |
+|--------|------|
+| `id` | UUID (PK) |
+| `session_token` | VARCHAR |
+| `status` | job_status |
+| `output_format` | image_format |
+| `quality` | INTEGER |
+| `total_files` | INTEGER |
+| `completed_files` | INTEGER |
+| `failed_files` | INTEGER |
+| `created_at` | TIMESTAMPTZ |
+| `updated_at` | TIMESTAMPTZ |
+| `expires_at` | TIMESTAMPTZ |
+
+**Tabela `job_files`**
+
+| Coluna | Tipo |
+|--------|------|
+| `id` | UUID (PK) |
+| `job_id` | UUID (FK → jobs) |
+| `original_name` | VARCHAR |
+| `original_key` | VARCHAR |
+| `original_size` | BIGINT |
+| `original_format` | image_format |
+| `converted_key` | VARCHAR |
+| `converted_size` | BIGINT |
+| `status` | file_status |
+| `error_message` | TEXT |
+| `created_at` | TIMESTAMPTZ |
+| `updated_at` | TIMESTAMPTZ |
+
+> **IMPORTANTE:** Sempre usar estes nomes exatos de colunas e valores de enum. Nunca usar: `done`, `error`, `done_with_errors`, `expired`, `input_key`, `output_key`, `output_mime`, `savings_percent`.
+
 ### 5.1 Migrations
 
 - **Toda alteração de schema via migration.** Nunca alterar banco manualmente.

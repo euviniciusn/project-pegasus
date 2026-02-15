@@ -7,7 +7,8 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "worker": "node src/workers/conversionWorker.js",
-    "worker:dev": "nodemon src/workers/conversionWorker.js"
+    "worker:dev": "nodemon src/workers/conversionWorker.js",
+    "cleanup": "node src/workers/cleanupWorker.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",
