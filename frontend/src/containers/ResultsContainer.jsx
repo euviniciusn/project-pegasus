@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
 import { useJobContext } from '../contexts/JobContext.jsx';
+import { useToast } from '../contexts/ToastContext.jsx';
 import { FILE_STATUS } from '../constants/index.js';
 import FileCard from '../components/FileCard.jsx';
+import SkeletonCard from '../components/SkeletonCard.jsx';
+import ProgressBar from '../components/ProgressBar.jsx';
 import ResultsSummary from '../components/ResultsSummary.jsx';
 
 function replaceExtension(fileName, format) {
@@ -20,50 +23,75 @@ function triggerDownload(url, fileName) {
 }
 
 export default function ResultsContainer() {
-  const { job, jobFiles, previews, isCompleted, getDownloadUrl, reset } = useJobContext();
+  const { job, jobFiles, previews, isProcessing, isCompleted, getDownloadUrl, reset } = useJobContext();
+  const { addToast } = useToast();
   const outputFormat = job?.output_format;
+
+  const completedCount = job?.completed_files ?? 0;
+  const failedCount = job?.failed_files ?? 0;
+  const totalFiles = job?.total_files ?? 0;
+  const hasFiles = jobFiles.length > 0;
+  const isWaitingFirstPoll = isProcessing && !hasFiles;
 
   const handleDownload = useCallback((fileId, originalName) => async () => {
     try {
       const { url } = await getDownloadUrl(fileId);
       triggerDownload(url, replaceExtension(originalName, outputFormat));
     } catch {
-      /* error handled by context */
+      addToast('Falha ao gerar link de download', 'error');
     }
-  }, [getDownloadUrl, outputFormat]);
+  }, [getDownloadUrl, outputFormat, addToast]);
 
   const handleDownloadAll = useCallback(async () => {
     const completed = jobFiles.filter((f) => f.status === FILE_STATUS.COMPLETED);
+    let downloadCount = 0;
+
     for (const file of completed) {
       try {
         const { url } = await getDownloadUrl(file.id);
         triggerDownload(url, replaceExtension(file.original_name, outputFormat));
+        downloadCount++;
       } catch {
         /* best effort */
       }
     }
-  }, [jobFiles, getDownloadUrl, outputFormat]);
 
-  if (jobFiles.length === 0) return null;
+    if (downloadCount > 0) {
+      addToast(`${downloadCount} arquivo(s) baixados`, 'success');
+    }
+  }, [jobFiles, getDownloadUrl, outputFormat, addToast]);
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-gray-800">Arquivos</h2>
+      {isProcessing && (
+        <ProgressBar completed={completedCount + failedCount} total={totalFiles} />
+      )}
+
+      <h2 className="text-lg font-semibold text-neutral-900">Arquivos</h2>
 
       <div className="flex flex-col gap-2">
+        {isWaitingFirstPoll && (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
+
         {jobFiles.map((file) => (
-          <FileCard
-            key={file.id}
-            file={file}
-            status={file.status}
-            previewUrl={previews[file.original_name]}
-            convertedSize={file.converted_size ? Number(file.converted_size) : undefined}
-            onDownload={
-              file.status === FILE_STATUS.COMPLETED
-                ? handleDownload(file.id, file.original_name)
-                : undefined
-            }
-          />
+          <div key={file.id} className="animate-fade-in">
+            <FileCard
+              file={file}
+              status={file.status}
+              previewUrl={previews[file.original_name]}
+              convertedSize={file.converted_size ? Number(file.converted_size) : undefined}
+              onDownload={
+                file.status === FILE_STATUS.COMPLETED
+                  ? handleDownload(file.id, file.original_name)
+                  : undefined
+              }
+            />
+          </div>
         ))}
       </div>
 

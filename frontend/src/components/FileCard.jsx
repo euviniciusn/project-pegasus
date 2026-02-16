@@ -5,7 +5,7 @@ import formatBytes from '../utils/formatBytes.js';
 
 function StatusBadge({ status }) {
   const config = {
-    [FILE_STATUS.PENDING]: { label: 'Pendente', style: 'text-gray-400' },
+    [FILE_STATUS.PENDING]: { label: 'Pendente', style: 'text-neutral-400' },
     [FILE_STATUS.PROCESSING]: { label: 'Processando...', style: 'text-primary-600' },
     [FILE_STATUS.COMPLETED]: { label: 'Concluído', style: 'text-green-600' },
     [FILE_STATUS.FAILED]: { label: 'Falhou', style: 'text-red-500' },
@@ -67,18 +67,20 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
 
   return (
     <div className={`
-      flex items-center gap-3 rounded-xl p-3
-      border transition-all duration-200
-      ${isFailed ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white shadow-sm'}
+      flex items-center gap-3 rounded-2xl p-3
+      border transition-all duration-300
+      ${isFailed
+        ? 'border-red-200 bg-red-50'
+        : 'border-neutral-200 bg-white shadow-sm hover:shadow-md hover:border-neutral-300'}
     `}>
-      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+      <div className="w-10 h-10 rounded-xl overflow-hidden bg-neutral-100 shrink-0">
         {preview && <img src={preview} alt={name} loading="lazy" className="w-full h-full object-cover" />}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-800 truncate">{name}</p>
+        <p className="text-sm text-neutral-700 font-medium truncate">{name}</p>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{formatBytes(size)}</span>
+          <span className="text-xs text-neutral-400">{formatBytes(size)}</span>
           {isComplete && <SavingsBadge originalSize={size} convertedSize={convertedSize} />}
           {status && <StatusBadge status={status} />}
         </div>
@@ -89,7 +91,8 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
           onClick={onDownload}
           className="w-8 h-8 flex items-center justify-center rounded-full
             bg-primary-50 text-primary-600 hover:bg-primary-100 hover:text-primary-700
-            transition-colors shrink-0"
+            hover:shadow-[0_0_12px_rgba(2,132,199,0.3)]
+            transition-all duration-200 shrink-0"
           aria-label="Baixar"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -102,8 +105,8 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
       {onRemove && !status && (
         <button
           onClick={handleRemove}
-          className="text-gray-400 hover:text-red-500 p-1 rounded
-            transition-colors shrink-0"
+          className="text-neutral-400 hover:text-red-500 p-1 rounded-lg
+            hover:bg-red-50 transition-all duration-200 shrink-0"
         >
           ✕
         </button>

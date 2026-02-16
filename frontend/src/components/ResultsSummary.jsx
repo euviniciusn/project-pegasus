@@ -28,8 +28,8 @@ function computeStats(files) {
 function StatItem({ label, value }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-xl font-bold text-gray-800">{value}</span>
-      <span className="text-xs text-gray-400">{label}</span>
+      <span className="text-xl font-bold text-neutral-900">{value}</span>
+      <span className="text-xs text-neutral-500">{label}</span>
     </div>
   );
 }
@@ -43,8 +43,8 @@ export default function ResultsSummary({ files, onDownloadAll, onReset }) {
   const stats = computeStats(files);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 flex flex-col gap-5 animate-fade-in">
-      <h3 className="text-lg font-semibold text-gray-800">Resultado</h3>
+    <div className="rounded-2xl border border-neutral-200 bg-white shadow-lg p-6 flex flex-col gap-5 animate-fade-in">
+      <h3 className="text-lg font-semibold text-neutral-900">Resultado</h3>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatItem label="Convertidos" value={`${stats.completedCount}/${files.length}`} />
@@ -64,10 +64,12 @@ export default function ResultsSummary({ files, onDownloadAll, onReset }) {
           <button
             type="button"
             onClick={onDownloadAll}
-            className="flex-1 px-4 py-2.5 rounded-full text-sm font-medium
-              border border-primary-600 bg-primary-600 text-white
-              hover:bg-primary-700 shadow-sm hover:shadow-md
-              transition-all duration-200"
+            className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold
+              border border-transparent text-white
+              shadow-lg hover:shadow-xl hover:opacity-90
+              transition-all duration-300
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            style={{ backgroundImage: 'linear-gradient(to right, #3dbff2, #020f59)' }}
           >
             Baixar todos
           </button>
@@ -77,9 +79,10 @@ export default function ResultsSummary({ files, onDownloadAll, onReset }) {
           type="button"
           onClick={onReset}
           className="flex-1 px-4 py-2.5 rounded-full text-sm font-medium
-            border border-gray-300 bg-white text-gray-600
-            hover:bg-gray-50 hover:text-gray-800 hover:border-gray-400
-            transition-all duration-200"
+            border border-neutral-200 bg-white text-neutral-600
+            hover:bg-neutral-50 hover:text-neutral-800 hover:border-neutral-300
+            transition-all duration-200
+            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
         >
           Nova conversão
         </button>

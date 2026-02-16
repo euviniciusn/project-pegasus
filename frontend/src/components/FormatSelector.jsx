@@ -16,7 +16,7 @@ export default function FormatSelector({ value, onChange, files }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-neutral-700">
         Formato de saída
       </label>
 
@@ -29,9 +29,10 @@ export default function FormatSelector({ value, onChange, files }) {
             className={`
               px-4 py-2 rounded-full text-sm font-medium
               border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
               ${value === format
-                ? 'border-primary-600 bg-primary-600 text-white shadow-sm'
-                : 'border-gray-300 bg-white text-gray-500 hover:border-primary-400 hover:text-gray-700'}
+                ? 'border-transparent bg-primary-600 text-white shadow-sm hover:bg-primary-500'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:border-primary-400 hover:text-neutral-700 hover:bg-primary-50/30'}
             `}
           >
             {FORMAT_LABELS[format]}

@@ -29,11 +29,18 @@ export default function ConvertButton({ onClick, isDisabled, isProcessing, isCom
       className={`
         w-full inline-flex items-center justify-center
         px-6 py-3 rounded-full text-base font-semibold
+        border border-transparent
         transition-all duration-300
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
         ${isDisabled || isProcessing
-          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          : 'bg-primary-600 text-white hover:bg-primary-700 hover:scale-[1.02] shadow-sm hover:shadow-md'}
+          ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+          : 'text-white shadow-lg hover:shadow-xl hover:scale-[1.02] hover:opacity-90'}
       `}
+      style={
+        !(isDisabled || isProcessing)
+          ? { backgroundImage: 'linear-gradient(to right, #3dbff2, #020f59)' }
+          : undefined
+      }
     >
       <ButtonContent isProcessing={isProcessing} isCompleted={isCompleted} />
     </button>

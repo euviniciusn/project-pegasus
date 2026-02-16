@@ -1,11 +1,14 @@
 import { JobProvider } from './contexts/JobContext.jsx';
+import { ToastProvider } from './contexts/ToastContext.jsx';
 import ConverterPage from './pages/ConverterPage.jsx';
 
 function App() {
   return (
-    <JobProvider>
-      <ConverterPage />
-    </JobProvider>
+    <ToastProvider>
+      <JobProvider>
+        <ConverterPage />
+      </JobProvider>
+    </ToastProvider>
   );
 }
 

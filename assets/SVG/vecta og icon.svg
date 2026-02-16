@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Camada_2" data-name="Camada 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 187.9 187.9">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#Gradiente_sem_nome_35);
+      }
+
+      .cls-2 {
+        fill: #f2f2f2;
+      }
+
+      .cls-3 {
+        fill: url(#Gradiente_sem_nome_35-2);
+      }
+
+      .cls-4 {
+        fill: url(#Gradiente_sem_nome_35-3);
+      }
+    </style>
+    <linearGradient id="Gradiente_sem_nome_35" data-name="Gradiente sem nome 35" x1="51.48" y1="158.98" x2="89.61" y2="68.71" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f1dcaa"/>
+      <stop offset="1" stop-color="#f8ad63"/>
+    </linearGradient>
+    <linearGradient id="Gradiente_sem_nome_35-2" data-name="Gradiente sem nome 35" x1="48.8" y1="157.84" x2="86.93" y2="67.57" xlink:href="#Gradiente_sem_nome_35"/>
+    <linearGradient id="Gradiente_sem_nome_35-3" data-name="Gradiente sem nome 35" x1="90.49" y1="175.46" x2="128.63" y2="85.19" xlink:href="#Gradiente_sem_nome_35"/>
+  </defs>
+  <g id="Logotipo_e_Cores" data-name="Logotipo e Cores">
+    <g>
+      <rect class="cls-2" width="187.9" height="187.9" rx="19.84" ry="19.84"/>
+      <g>
+        <path class="cls-1" d="M107.31,66.21l-13.64,18.9c-.55.77-1.69.76-2.24,0l-13.64-18.9c-1.92-2.66-1.92-6.25,0-8.91l13.64-18.91c.55-.77,1.69-.77,2.24,0l13.65,18.91c1.92,2.66,1.92,6.26,0,8.92Z"/>
+        <g>
+          <path class="cls-3" d="M107.89,150.09h-26.53c-3.94,0-7.54-2.23-9.29-5.76L28.72,57.04h29.81c.53,0,1.01.3,1.24.77l29.49,59.38c.88,1.76,2.68,2.88,4.65,2.88h28.03c2.37,0,4.66-.89,6.42-2.49h0s-10.96,26.18-10.96,26.18c-1.6,3.83-5.35,6.33-9.51,6.33Z"/>
+          <path class="cls-4" d="M159.18,57.04h-25.86c-6.97,0-13.27,4.19-15.96,10.62l-19.62,46.93h24.27c4.18,0,7.96-2.51,9.57-6.37l17.73-42.37c1.79-4.28,5.42-7.51,9.87-8.81h0Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

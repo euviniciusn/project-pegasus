@@ -19,7 +19,7 @@ export default function QualitySlider({ value, onChange, outputFormat }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-neutral-700">
           Qualidade
         </label>
         <span className="text-sm font-semibold text-primary-600">
@@ -33,11 +33,11 @@ export default function QualitySlider({ value, onChange, outputFormat }) {
         max={100}
         value={value}
         onChange={handleChange}
-        className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer
+        className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer
           accent-primary-600"
       />
 
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs text-neutral-400">
         <span>Menor tamanho</span>
         <span>Maior qualidade</span>
       </div>
@@ -51,9 +51,10 @@ export default function QualitySlider({ value, onChange, outputFormat }) {
             className={`
               px-3 py-1 rounded-full text-xs font-medium
               border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
               ${value === preset.value
                 ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-300 text-gray-500 hover:border-primary-400 hover:text-gray-700'}
+                : 'border-neutral-200 text-neutral-500 hover:border-primary-400 hover:text-neutral-700 hover:bg-primary-50/30'}
             `}
           >
             {preset.label}
