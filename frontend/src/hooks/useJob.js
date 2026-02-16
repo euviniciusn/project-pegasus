@@ -20,6 +20,7 @@ export default function useJob() {
   const [error, setError] = useState(null);
   const jobIdRef = useRef(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [previews, setPreviews] = useState({});
 
   const pollStatus = useCallback(async () => {
     if (!jobIdRef.current) return;
@@ -61,6 +62,12 @@ export default function useJob() {
     setJob(null);
     setFiles([]);
 
+    const previewMap = {};
+    for (const f of localFiles) {
+      previewMap[f.name] = URL.createObjectURL(f);
+    }
+    setPreviews(previewMap);
+
     try {
       const fileMeta = localFiles.map((f) => ({
         name: f.name,
@@ -92,11 +99,16 @@ export default function useJob() {
     setIsProcessing(false);
     setIsCompleted(false);
     setError(null);
+    setPreviews((prev) => {
+      Object.values(prev).forEach(URL.revokeObjectURL);
+      return {};
+    });
   }, []);
 
   return {
     job,
     files,
+    previews,
     isProcessing,
     isCompleted,
     error,

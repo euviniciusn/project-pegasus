@@ -44,18 +44,19 @@ SavingsBadge.propTypes = {
   convertedSize: PropTypes.number,
 };
 
-export default function FileCard({ file, localFile, status, convertedSize, onRemove, onDownload }) {
-  const [preview, setPreview] = useState(null);
+export default function FileCard({ file, localFile, previewUrl, status, convertedSize, onRemove, onDownload }) {
+  const [localPreview, setLocalPreview] = useState(null);
   const name = file?.original_name || localFile?.name;
   const rawSize = file?.original_size ?? localFile?.size;
   const size = rawSize != null ? Number(rawSize) : undefined;
   const isComplete = status === FILE_STATUS.COMPLETED;
   const isFailed = status === FILE_STATUS.FAILED;
+  const preview = previewUrl || localPreview;
 
   useEffect(() => {
     if (!localFile) return;
     const url = URL.createObjectURL(localFile);
-    setPreview(url);
+    setLocalPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [localFile]);
 
@@ -109,6 +110,7 @@ export default function FileCard({ file, localFile, status, convertedSize, onRem
 FileCard.propTypes = {
   file: PropTypes.object,
   localFile: PropTypes.object,
+  previewUrl: PropTypes.string,
   status: PropTypes.string,
   convertedSize: PropTypes.number,
   onRemove: PropTypes.func,

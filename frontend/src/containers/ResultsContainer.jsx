@@ -4,13 +4,22 @@ import { FILE_STATUS } from '../constants/index.js';
 import FileCard from '../components/FileCard.jsx';
 import ResultsSummary from '../components/ResultsSummary.jsx';
 
-export default function ResultsContainer() {
-  const { jobFiles, isCompleted, getDownloadUrl, reset } = useJobContext();
+function triggerDownload(url, fileName) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 
-  const handleDownload = useCallback((fileId) => async () => {
+export default function ResultsContainer() {
+  const { jobFiles, previews, isCompleted, getDownloadUrl, reset } = useJobContext();
+
+  const handleDownload = useCallback((fileId, fileName) => async () => {
     try {
       const { url } = await getDownloadUrl(fileId);
-      window.open(url, '_blank');
+      triggerDownload(url, fileName);
     } catch {
       /* error handled by context */
     }
@@ -21,7 +30,7 @@ export default function ResultsContainer() {
     for (const file of completed) {
       try {
         const { url } = await getDownloadUrl(file.id);
-        window.open(url, '_blank');
+        triggerDownload(url, file.original_name);
       } catch {
         /* best effort */
       }
@@ -40,10 +49,11 @@ export default function ResultsContainer() {
             key={file.id}
             file={file}
             status={file.status}
+            previewUrl={previews[file.original_name]}
             convertedSize={file.converted_size ? Number(file.converted_size) : undefined}
             onDownload={
               file.status === FILE_STATUS.COMPLETED
-                ? handleDownload(file.id)
+                ? handleDownload(file.id, file.original_name)
                 : undefined
             }
           />

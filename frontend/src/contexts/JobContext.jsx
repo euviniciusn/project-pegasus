@@ -33,6 +33,7 @@ export function JobProvider({ children }) {
     errors: upload.errors,
     job: jobHook.job,
     jobFiles: jobHook.files,
+    previews: jobHook.previews,
     isProcessing: jobHook.isProcessing,
     isCompleted: jobHook.isCompleted,
     error: jobHook.error,
@@ -47,7 +48,7 @@ export function JobProvider({ children }) {
     upload.files, upload.outputFormat, upload.quality,
     upload.isUploading, upload.uploadProgress, upload.errors,
     upload.addFiles, upload.removeFile, upload.setOutputFormat, upload.setQuality,
-    jobHook.job, jobHook.files, jobHook.isProcessing,
+    jobHook.job, jobHook.files, jobHook.previews, jobHook.isProcessing,
     jobHook.isCompleted, jobHook.error,
     startConversion, reset, getDownloadUrl,
   ]);
