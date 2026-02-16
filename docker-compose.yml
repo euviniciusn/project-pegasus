@@ -13,6 +13,7 @@ services:
       - converter-net
     depends_on:
       - api
+      - frontend
 
   # ── Database ──
   postgres:
@@ -101,6 +102,17 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+
+  # ── Frontend ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - converter-net
+    depends_on:
+      - api
 
   # ── Database migrations (run-once) ──
   migrate:

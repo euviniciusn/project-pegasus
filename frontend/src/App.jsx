@@ -1,8 +1,11 @@
+import { JobProvider } from './contexts/JobContext.jsx';
+import ConverterPage from './pages/ConverterPage.jsx';
+
 function App() {
   return (
-    <div>
-      <h1>Image Converter</h1>
-    </div>
+    <JobProvider>
+      <ConverterPage />
+    </JobProvider>
   );
 }
 
