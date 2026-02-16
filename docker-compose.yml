@@ -12,9 +12,7 @@ services:
     networks:
       - converter-net
     depends_on:
-      - postgres
-      - redis
-      - minio
+      - api
 
   # ── Database ──
   postgres:
@@ -67,6 +65,42 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # ── API ──
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - converter-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # ── Conversion Worker ──
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - converter-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
   # ── Database migrations (run-once) ──
   migrate:
