@@ -28,11 +28,13 @@ function extractCookie(response) {
 }
 
 async function api(method, path, body) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
-  };
-  if (body) opts.body = JSON.stringify(body);
+  const headers = { Cookie: sessionCookie };
+  const opts = { method, headers };
+
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
 
   const response = await fetch(`${BASE_URL}${path}`, opts);
   extractCookie(response);
