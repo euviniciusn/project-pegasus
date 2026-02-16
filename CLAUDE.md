@@ -455,43 +455,65 @@ export default config;
 
 | Enum | Valores |
 |------|---------|
-| `job_status` | `pending`, `processing`, `completed`, `failed` |
+| `job_status` | `pending`, `processing`, `completed`, `failed`, `done_with_errors`, `expired` |
 | `file_status` | `pending`, `processing`, `completed`, `failed` |
+| `image_format` | `png`, `jpg`, `webp`, `avif` |
 
 **Tabela `jobs`**
 
-| Coluna | Tipo |
-|--------|------|
-| `id` | UUID (PK) |
-| `session_token` | VARCHAR |
-| `status` | job_status |
-| `output_format` | image_format |
-| `quality` | INTEGER |
-| `total_files` | INTEGER |
-| `completed_files` | INTEGER |
-| `failed_files` | INTEGER |
-| `created_at` | TIMESTAMPTZ |
-| `updated_at` | TIMESTAMPTZ |
-| `expires_at` | TIMESTAMPTZ |
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `id` | UUID (PK) | `DEFAULT gen_random_uuid()` |
+| `session_token` | VARCHAR(64) | NOT NULL |
+| `status` | job_status | DEFAULT `'pending'` |
+| `output_format` | image_format | NOT NULL |
+| `quality` | SMALLINT | DEFAULT 82, CHECK 1–100 |
+| `total_files` | SMALLINT | DEFAULT 0 |
+| `completed_files` | SMALLINT | DEFAULT 0 |
+| `failed_files` | SMALLINT | DEFAULT 0 |
+| `resize_width` | SMALLINT | NULL, CHECK 1–16383 |
+| `resize_height` | SMALLINT | NULL, CHECK 1–16383 |
+| `resize_percent` | SMALLINT | NULL, CHECK 1–100 |
+| `created_at` | TIMESTAMPTZ | DEFAULT `now()` |
+| `updated_at` | TIMESTAMPTZ | DEFAULT `now()` |
+| `expires_at` | TIMESTAMPTZ | NOT NULL |
 
 **Tabela `job_files`**
 
-| Coluna | Tipo |
-|--------|------|
-| `id` | UUID (PK) |
-| `job_id` | UUID (FK → jobs) |
-| `original_name` | VARCHAR |
-| `original_key` | VARCHAR |
-| `original_size` | BIGINT |
-| `original_format` | image_format |
-| `converted_key` | VARCHAR |
-| `converted_size` | BIGINT |
-| `status` | file_status |
-| `error_message` | TEXT |
-| `created_at` | TIMESTAMPTZ |
-| `updated_at` | TIMESTAMPTZ |
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `id` | UUID (PK) | `DEFAULT gen_random_uuid()` |
+| `job_id` | UUID (FK → jobs) | ON DELETE CASCADE |
+| `original_name` | VARCHAR(255) | NOT NULL |
+| `original_key` | VARCHAR(512) | NOT NULL |
+| `original_size` | INTEGER | NOT NULL |
+| `original_format` | image_format | NOT NULL |
+| `converted_key` | VARCHAR(512) | NULL |
+| `converted_size` | INTEGER | NULL |
+| `output_mime` | VARCHAR(64) | NULL |
+| `savings_percent` | NUMERIC(5, 2) | NULL |
+| `warnings` | TEXT[] | DEFAULT `'{}'` |
+| `status` | file_status | DEFAULT `'pending'` |
+| `error_message` | TEXT | NULL |
+| `created_at` | TIMESTAMPTZ | DEFAULT `now()` |
+| `updated_at` | TIMESTAMPTZ | DEFAULT `now()` |
 
-> **IMPORTANTE:** Sempre usar estes nomes exatos de colunas e valores de enum. Nunca usar: `done`, `error`, `done_with_errors`, `expired`, `input_key`, `output_key`, `output_mime`, `savings_percent`.
+**Tabela `analytics_events`**
+
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `id` | UUID (PK) | `DEFAULT gen_random_uuid()` |
+| `event_type` | VARCHAR(32) | NOT NULL |
+| `input_format` | image_format | NOT NULL |
+| `output_format` | image_format | NOT NULL |
+| `input_size` | INTEGER | NOT NULL |
+| `output_size` | INTEGER | NOT NULL |
+| `savings_percent` | NUMERIC(5, 1) | NOT NULL |
+| `duration_ms` | INTEGER | NOT NULL |
+| `quality` | SMALLINT | NOT NULL |
+| `created_at` | TIMESTAMPTZ | DEFAULT `now()` |
+
+> **IMPORTANTE:** Sempre usar estes nomes exatos de colunas e valores de enum conforme listados acima. Nunca usar nomes inventados como: `done`, `error`, `input_key`, `output_key`.
 
 ### 5.1 Migrations
 
@@ -499,6 +521,8 @@ export default config;
 - **Migrations idempotentes:** rodar duas vezes não deve quebrar.
 - **Nomes descritivos:** `001_create_jobs_table.sql`, `002_add_session_token_to_jobs.sql`
 - **Cada migration faz UMA coisa:** criar tabela OU adicionar coluna, nunca ambos.
+
+> **⚠️ REGRA OBRIGATÓRIA:** Sempre que criar ou alterar código que referencia colunas ou valores de enum que não existem no schema atual do banco, DEVE criar uma migration SQL correspondente em `backend/src/db/migrations/` com número sequencial (ex: `008_`, `009_`). Nunca assumir que colunas existem — verificar a seção 'Schema do Banco de Dados' acima e atualizá-la com as novas colunas adicionadas. Se adicionar coluna no código sem migration, o deploy vai quebrar.
 
 ### 5.2 Queries
 
