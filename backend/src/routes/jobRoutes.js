@@ -55,16 +55,6 @@ function jobRoutes(fastify, _opts, done) {
 
   const startJobSchema = {
     ...jobIdParamsSchema,
-    body: {
-      type: 'object',
-      properties: {
-        excludeFileIds: {
-          type: 'array',
-          items: { type: 'string', pattern: uuidPattern },
-        },
-      },
-      additionalProperties: false,
-    },
   };
 
   fastify.post('/:id/start', {
