@@ -9,12 +9,22 @@ import sessionPlugin from './middleware/session.js';
 import errorHandlerPlugin from './middleware/errorHandler.js';
 import jobRoutes from './routes/jobRoutes.js';
 
+function resolveTransport() {
+  if (config.server.nodeEnv !== 'development') return undefined;
+  try {
+    import.meta.resolve('pino-pretty');
+    return { target: 'pino-pretty', options: { colorize: true } };
+  } catch {
+    return undefined;
+  }
+}
+
+const transport = resolveTransport();
+
 const app = Fastify({
   logger: {
     level: config.server.logLevel,
-    ...(config.server.nodeEnv === 'development' && {
-      transport: { target: 'pino-pretty', options: { colorize: true } },
-    }),
+    ...(transport && { transport }),
   },
 });
 
