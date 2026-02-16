@@ -1,7 +1,8 @@
+import archiver from 'archiver';
 import * as jobRepo from '../repositories/jobRepository.js';
 import * as jobFileRepo from '../repositories/jobFileRepository.js';
 import { addConversionJob } from '../queue/conversionQueue.js';
-import { getPresignedUploadUrl, getPresignedDownloadUrl, fileExists } from '../storage/objectStorage.js';
+import { getPresignedUploadUrl, getPresignedDownloadUrl, downloadFileAsStream, fileExists } from '../storage/objectStorage.js';
 import { NotFoundError, ValidationError } from '../errors/index.js';
 
 function buildInputKey(jobId, fileName) {
@@ -109,4 +110,35 @@ export async function getDownloadUrl(jobId, fileId, sessionToken) {
 
   const url = await getPresignedDownloadUrl(file.converted_key);
   return { url, fileName: file.original_name };
+}
+
+function replaceExtension(fileName, format) {
+  const dot = fileName.lastIndexOf('.');
+  const base = dot > 0 ? fileName.slice(0, dot) : fileName;
+  return `${base}.${format}`;
+}
+
+export async function streamZipDownload(jobId, sessionToken) {
+  const job = await findJobOrFail(jobId, sessionToken);
+
+  if (job.status !== 'completed') {
+    throw new ValidationError(`Job is not completed (status: ${job.status})`);
+  }
+
+  const files = await jobFileRepo.findCompletedByJobId(jobId);
+  if (files.length === 0) {
+    throw new ValidationError('No completed files to download');
+  }
+
+  const archive = archiver('zip', { zlib: { level: 1 } });
+
+  for (const file of files) {
+    const stream = await downloadFileAsStream(file.converted_key);
+    const outputName = replaceExtension(file.original_name, job.output_format);
+    archive.append(stream, { name: outputName });
+  }
+
+  archive.finalize();
+
+  return archive;
 }

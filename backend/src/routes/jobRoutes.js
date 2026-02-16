@@ -65,6 +65,11 @@ function jobRoutes(fastify, _opts, done) {
     config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
   }, jobController.downloadFile);
 
+  fastify.get('/:id/download-all', {
+    schema: jobIdParamsSchema,
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, jobController.downloadAll);
+
   done();
 }
 

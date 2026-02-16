@@ -51,3 +51,7 @@ export async function getJobStatus(jobId) {
 export async function getDownloadUrl(jobId, fileId) {
   return request('GET', `/jobs/${jobId}/download/${fileId}`);
 }
+
+export function getDownloadAllUrl(jobId) {
+  return `${BASE_URL}/jobs/${jobId}/download-all`;
+}

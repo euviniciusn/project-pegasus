@@ -72,6 +72,15 @@ export async function downloadFile(key) {
   }
 }
 
+export async function downloadFileAsStream(key) {
+  try {
+    const { Body } = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    return Body;
+  } catch (err) {
+    wrapError('stream download', key, err);
+  }
+}
+
 export async function deleteFile(key) {
   try {
     await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));

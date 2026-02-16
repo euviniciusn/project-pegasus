@@ -64,6 +64,14 @@ export async function countByJobIdAndStatus(jobId, status) {
   return rows[0].count;
 }
 
+export async function findCompletedByJobId(jobId) {
+  const { rows } = await pool.query(
+    "SELECT id, original_name, converted_key FROM job_files WHERE job_id = $1 AND status = 'completed' ORDER BY created_at",
+    [jobId],
+  );
+  return rows;
+}
+
 export async function findByJobIdWithStatus(jobId) {
   const { rows } = await pool.query(
     'SELECT id, original_name, original_size, status, converted_size, error_message FROM job_files WHERE job_id = $1 ORDER BY created_at',

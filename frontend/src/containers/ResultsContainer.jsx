@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useJobContext } from '../contexts/JobContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
+import { getDownloadAllUrl } from '../services/api.js';
 import { FILE_STATUS } from '../constants/index.js';
 import FileCard from '../components/FileCard.jsx';
 import SkeletonCard from '../components/SkeletonCard.jsx';
@@ -42,24 +43,11 @@ export default function ResultsContainer() {
     }
   }, [getDownloadUrl, outputFormat, addToast]);
 
-  const handleDownloadAll = useCallback(async () => {
-    const completed = jobFiles.filter((f) => f.status === FILE_STATUS.COMPLETED);
-    let downloadCount = 0;
-
-    for (const file of completed) {
-      try {
-        const { url } = await getDownloadUrl(file.id);
-        triggerDownload(url, replaceExtension(file.original_name, outputFormat));
-        downloadCount++;
-      } catch {
-        /* best effort */
-      }
-    }
-
-    if (downloadCount > 0) {
-      addToast(`${downloadCount} arquivo(s) baixados`, 'success');
-    }
-  }, [jobFiles, getDownloadUrl, outputFormat, addToast]);
+  const handleDownloadAll = useCallback(() => {
+    if (!job?.id) return;
+    const url = getDownloadAllUrl(job.id);
+    window.open(url, '_blank');
+  }, [job?.id]);
 
   return (
     <div className="flex flex-col gap-4">

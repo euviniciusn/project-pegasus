@@ -115,3 +115,17 @@ export async function downloadFile(request, reply) {
     data: { url: result.url, fileName: result.fileName },
   });
 }
+
+export async function downloadAll(request, reply) {
+  const { id } = request.params;
+
+  const archive = await jobService.streamZipDownload(id, request.sessionToken);
+
+  const timestamp = Date.now();
+  const fileName = `vecta-convert-${timestamp}.zip`;
+
+  reply.header('Content-Type', 'application/zip');
+  reply.header('Content-Disposition', `attachment; filename="${fileName}"`);
+
+  return reply.send(archive);
+}
