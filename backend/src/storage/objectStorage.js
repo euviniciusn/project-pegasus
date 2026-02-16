@@ -12,11 +12,19 @@ import { StorageError } from '../errors/index.js';
 
 const { endpoint, port, accessKey, secretKey, bucket, useSSL } = config.minio;
 const protocol = useSSL ? 'https' : 'http';
+const credentials = { accessKeyId: accessKey, secretAccessKey: secretKey };
 
 const s3 = new S3Client({
   endpoint: `${protocol}://${endpoint}:${port}`,
   region: 'us-east-1',
-  credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
+  credentials,
+  forcePathStyle: true,
+});
+
+const s3Public = new S3Client({
+  endpoint: config.minio.publicUrl,
+  region: 'us-east-1',
+  credentials,
   forcePathStyle: true,
 });
 
@@ -66,7 +74,7 @@ export async function deleteFiles(keys) {
 
 export async function getPresignedUploadUrl(key, contentType, expiresIn = config.minio.presignedUrlExpiry) {
   try {
-    return await getSignedUrl(s3, new PutObjectCommand({
+    return await getSignedUrl(s3Public, new PutObjectCommand({
       Bucket: bucket, Key: key, ContentType: contentType,
     }), { expiresIn });
   } catch (err) {
@@ -76,7 +84,7 @@ export async function getPresignedUploadUrl(key, contentType, expiresIn = config
 
 export async function getPresignedDownloadUrl(key, expiresIn = config.minio.presignedUrlExpiry) {
   try {
-    return await getSignedUrl(s3, new GetObjectCommand({
+    return await getSignedUrl(s3Public, new GetObjectCommand({
       Bucket: bucket, Key: key,
     }), { expiresIn });
   } catch (err) {

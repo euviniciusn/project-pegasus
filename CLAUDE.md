@@ -211,6 +211,124 @@ src/
 
 ---
 
+## 3.7 Design System — Vecta
+
+Todos os componentes do frontend devem seguir este design system. Referência completa em `/design-system.md`.
+
+### CSS Variables
+
+```css
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border-top: rgba(255, 255, 255, 0.3);
+  --glass-border-bottom: rgba(255, 255, 255, 0.05);
+  --text-main: #f5f5f7;
+  --nav-height: 60px;
+}
+```
+
+### Cores
+
+**Primary (Azul):** `primary-600: #0284c7` (cor principal de acento). Escala de 50 (`#f0f9ff`) a 950 (`#082f49`).
+
+**Neutrals:** `neutral-950: #020617` (background base). Escala de 50 (`#f8fafc`) a 950.
+
+**Gradiente CTA:** `linear-gradient(to right, #3dbff2, #020f59)`
+
+**Texto (dark theme):** heading `text-white` | body `text-neutral-300` | secondary `text-neutral-400` | muted `text-neutral-500`
+
+### Tipografia
+
+Font stack: `-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`
+
+Google Font: `Inter` (weights: 300, 400, 500, 600, 700)
+
+| Elemento | Mobile | Desktop | Weight | Line-height |
+|----------|--------|---------|--------|-------------|
+| Hero H1 | `text-4xl` (36px) | `text-7xl` (56px) | 900 | `leading-[0.95]` |
+| Section H2 | `text-3xl` (30px) | `text-4xl` (36px) | 700 | default |
+| Subsection H3 | `text-xl` (20px) | `text-2xl` (24px) | 600 | default |
+| Body Large | `text-lg` (18px) | `text-xl` (20px) | 400 | `leading-relaxed` |
+| Body | `text-base` (16px) | `text-base` (16px) | 400 | `leading-relaxed` |
+| Small | `text-sm` (14px) | `text-sm` (14px) | 500 | default |
+| Label/Tag | `text-xs` (12px) | `text-xs` (12px) | 600 | `tracking-wider`, `uppercase` |
+
+### Border Radius
+
+| Classe | Uso |
+|--------|-----|
+| `rounded-full` | Botões, navbar, pills, badges |
+| `rounded-3xl` (24px) | Containers grandes, modais mobile |
+| `rounded-2xl` (16px) | **Cards padrão**, glass boxes, imagens hero |
+| `rounded-xl` (12px) | Imagens de galeria, carrossel items |
+| `rounded-lg` (8px) | Elementos menores |
+
+### Sombras
+
+```css
+/* Glow de botão primário (hover) */
+box-shadow: 0 0 20px rgba(2, 132, 199, 0.5);
+
+/* Glow de card (hover) */
+box-shadow: 0 0 30px rgba(14, 165, 233, 0.15);
+```
+
+### Liquid Glass (Efeito Vidro)
+
+Classe `.liquid-glass` para navbar e componentes sobre fundo escuro. Usa `backdrop-filter: blur()` com pseudo-elements. Ver detalhes completos em `/design-system.md` seção 7.
+
+### Componentes Padrão
+
+**Button** — Variants: `primary` | `secondary` | `outline`. Sizes: `sm` | `md` | `lg`. Sempre `rounded-full`.
+
+```
+primary:   bg-primary-600, hover:bg-primary-500, hover:shadow-glow, text-white
+secondary: bg-primary-900/30, hover:bg-primary-900/50, text-primary-300
+outline:   border-neutral-700, hover:bg-neutral-800, text-neutral-200
+```
+
+**CTA Button:** `bg-gradient-to-r from-[#3dbff2] to-[#020f59]`, `rounded-full`, `hover:scale-105`
+
+**Card:** `rounded-2xl`, `border border-neutral-800`, `hover:shadow-[0_0_30px_rgba(14,165,233,0.15)]`, `hover:scale-[1.03]`
+
+**Service Card:** `.liquid-glass rounded-2xl`, `hover:border-primary-500/50`, `hover:-translate-y-2`
+
+**Badge/Tag:** `text-xs font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full`
+
+### Transições
+
+| Duração | Uso |
+|---------|-----|
+| `duration-200` | Interações rápidas (botões, toggles) |
+| `duration-300` | **Padrão geral** (hover, borders) |
+| `duration-500` | Hover de imagens, scale |
+| `duration-700` | Slide de carrossel |
+
+### Breakpoints
+
+| Prefixo | Largura | Dispositivo |
+|---------|---------|-------------|
+| (base) | 0px | Mobile |
+| `sm:` | 640px | Tablet portrait |
+| `md:` | 768px | Tablet landscape |
+| `lg:` | 1024px | Desktop |
+
+### Z-Index Scale
+
+| Valor | Uso |
+|-------|-----|
+| `z-[100]` | Lightbox / modais fullscreen |
+| `z-50` | Navbar fixo |
+| `z-40` | Overlay do menu mobile |
+| `z-10` | Conteúdo relativo sobre imagens |
+| `-z-10` | Camadas de glass backdrop |
+
+### Ícones
+
+Biblioteca: **Lucide React** (`lucide-react`). Ícones comuns: `ArrowLeft`, `ArrowRight`, `X`, `Check`, `ChevronLeft`, `ChevronRight`, `Monitor`, `Star`, `Menu`, `ExternalLink`.
+
+---
+
 ## 4. Backend — Node.js / Fastify
 
 ### 4.1 Arquitetura de Camadas

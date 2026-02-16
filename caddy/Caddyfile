@@ -8,6 +8,12 @@
 		reverse_proxy api:3000
 	}
 
+	# ── MinIO presigned URLs proxy ──
+	handle /storage/* {
+		uri strip_prefix /storage
+		reverse_proxy minio:9000
+	}
+
 	# ── Health check ──
 	handle /health {
 		respond "OK" 200

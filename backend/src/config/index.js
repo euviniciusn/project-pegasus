@@ -38,6 +38,7 @@ const config = {
     bucket: process.env.MINIO_BUCKET || 'converter',
     useSSL: process.env.MINIO_USE_SSL === 'true',
     presignedUrlExpiry: parseInt(process.env.PRESIGNED_URL_EXPIRY, 10) || 3600,
+    publicUrl: process.env.MINIO_PUBLIC_URL || 'http://localhost/storage',
   },
 
   upload: {
