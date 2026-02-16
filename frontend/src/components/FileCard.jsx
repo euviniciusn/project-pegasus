@@ -87,10 +87,15 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
       {isComplete && onDownload && (
         <button
           onClick={onDownload}
-          className="text-xs text-primary-600 hover:text-primary-700 font-medium px-2 py-1 rounded
+          className="w-8 h-8 flex items-center justify-center rounded-full
+            bg-primary-50 text-primary-600 hover:bg-primary-100 hover:text-primary-700
             transition-colors shrink-0"
+          aria-label="Baixar"
         >
-          Baixar
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 4v5.5M5.5 7.5L8 10l2.5-2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       )}
 
