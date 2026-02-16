@@ -16,7 +16,7 @@ function resolveTransport() {
 const transport = resolveTransport();
 
 const logger = pino({
-  level: config.server.logLevel,
+  level: isDev ? 'debug' : 'info',
   ...(transport && { transport }),
 });
 

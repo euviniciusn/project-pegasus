@@ -20,33 +20,50 @@ async function cleanSingleJob(job) {
 
   if (keys.length > 0) {
     await deleteFiles(keys);
-    log.info({ deletedKeys: keys.length }, 'Deleted storage files');
+    log.info({ deletedKeys: keys.length, fileCount: files.length }, 'Deleted storage files');
   }
 
   await jobRepo.markAsExpired(job.id);
   log.info('Job marked as expired');
+
+  return { files: files.length, storageKeys: keys.length };
 }
 
 export async function cleanExpiredJobs() {
+  const startTime = Date.now();
   const expiredJobs = await jobRepo.findExpiredJobs();
 
   if (expiredJobs.length === 0) {
-    logger.info('No expired jobs found');
+    logger.debug('No expired jobs found');
     return 0;
   }
 
-  logger.info({ count: expiredJobs.length }, 'Found expired jobs');
-  let cleaned = 0;
+  logger.info({ jobCount: expiredJobs.length }, 'Found expired jobs to clean');
+
+  let cleanedJobs = 0;
+  let cleanedFiles = 0;
+  let cleanedKeys = 0;
 
   for (const job of expiredJobs) {
     try {
-      await cleanSingleJob(job);
-      cleaned++;
+      const counts = await cleanSingleJob(job);
+      cleanedJobs++;
+      cleanedFiles += counts.files;
+      cleanedKeys += counts.storageKeys;
     } catch (err) {
       logger.error({ err, jobId: job.id }, 'Failed to clean expired job');
     }
   }
 
-  logger.info({ cleaned, total: expiredJobs.length }, 'Cleanup finished');
-  return cleaned;
+  const durationMs = Date.now() - startTime;
+
+  logger.info({
+    durationMs,
+    cleanedJobs,
+    cleanedFiles,
+    cleanedKeys,
+    failedJobs: expiredJobs.length - cleanedJobs,
+  }, 'Cleanup finished');
+
+  return cleanedJobs;
 }

@@ -2,7 +2,22 @@ import * as jobService from '../services/jobService.js';
 import config from '../config/index.js';
 import { ValidationError, FileTooLargeError } from '../errors/index.js';
 
-const ALLOWED_FORMATS = ['png', 'jpg', 'webp'];
+const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg'];
+const ALLOWED_OUTPUT_FORMATS = ['png', 'jpg', 'webp'];
+const DANGEROUS_FILENAME_PATTERN = /[<>:"/\\|?*\x00-\x1f]|\.{2,}/;
+
+function sanitizeFileName(name) {
+  if (DANGEROUS_FILENAME_PATTERN.test(name)) {
+    throw new ValidationError(`Invalid file name: "${name}"`);
+  }
+
+  const basename = name.split('/').pop().split('\\').pop();
+  if (!basename || basename.startsWith('.')) {
+    throw new ValidationError(`Invalid file name: "${name}"`);
+  }
+
+  return basename;
+}
 
 function validateFiles(files) {
   if (!Array.isArray(files) || files.length === 0) {
@@ -15,17 +30,36 @@ function validateFiles(files) {
     );
   }
 
+  let totalSize = 0;
+
   for (const file of files) {
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      throw new ValidationError(
+        `Invalid MIME type "${file.type}" for "${file.name}". Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`,
+      );
+    }
+
     if (file.size > config.upload.maxFileSize) {
       throw new FileTooLargeError(file.size, config.upload.maxFileSize);
     }
+
+    totalSize += file.size;
+    file.name = sanitizeFileName(file.name);
+  }
+
+  if (totalSize > config.upload.maxTotalJobSize) {
+    const totalMB = (totalSize / 1024 / 1024).toFixed(1);
+    const limitMB = (config.upload.maxTotalJobSize / 1024 / 1024).toFixed(0);
+    throw new ValidationError(
+      `Total job size ${totalMB}MB exceeds ${limitMB}MB limit`,
+    );
   }
 }
 
 function validateOutputFormat(format) {
-  if (!ALLOWED_FORMATS.includes(format)) {
+  if (!ALLOWED_OUTPUT_FORMATS.includes(format)) {
     throw new ValidationError(
-      `Invalid output format "${format}". Allowed: ${ALLOWED_FORMATS.join(', ')}`,
+      `Invalid output format "${format}". Allowed: ${ALLOWED_OUTPUT_FORMATS.join(', ')}`,
     );
   }
 }

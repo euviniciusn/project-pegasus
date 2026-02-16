@@ -72,7 +72,7 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
       ${isFailed ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white shadow-sm'}
     `}>
       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-        {preview && <img src={preview} alt={name} className="w-full h-full object-cover" />}
+        {preview && <img src={preview} alt={name} loading="lazy" className="w-full h-full object-cover" />}
       </div>
 
       <div className="flex-1 min-w-0">

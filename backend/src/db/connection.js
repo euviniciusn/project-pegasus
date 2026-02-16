@@ -4,7 +4,10 @@ import logger from '../utils/logger.js';
 
 const pool = new pg.Pool({
   connectionString: config.database.url,
-  max: 10,
+  min: config.database.poolMin,
+  max: config.database.poolMax,
+  statement_timeout: config.database.statementTimeout,
+  idle_in_transaction_session_timeout: 30000,
 });
 
 pool.on('error', (err) => {

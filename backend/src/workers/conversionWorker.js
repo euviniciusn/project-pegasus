@@ -16,16 +16,17 @@ function buildOutputKey(jobId, originalName, outputFormat) {
   return `outputs/${jobId}/${baseName}.${outputFormat}`;
 }
 
-function calculateSavings(inputSize, outputSize) {
-  if (inputSize === 0) return 0;
-  return parseFloat((((inputSize - outputSize) / inputSize) * 100).toFixed(2));
-}
-
 async function processConversion(job) {
   const { jobId, fileId, inputKey, outputFormat, options } = job.data;
-  const log = logger.child({ jobId, fileId });
+  const attempt = job.attemptsMade + 1;
+  const log = logger.child({ jobId, fileId, attempt });
+  const startTime = Date.now();
 
-  log.info('Starting conversion');
+  if (attempt > 1) {
+    log.warn('Retrying conversion');
+  }
+
+  log.info({ outputFormat, quality: options?.quality }, 'Starting conversion');
   await jobFileRepo.updateStatus(fileId, { status: 'processing' });
 
   const inputBuffer = await downloadFile(inputKey);
@@ -35,7 +36,6 @@ async function processConversion(job) {
   const outputKey = buildOutputKey(jobId, file.original_name, outputFormat);
 
   await uploadFile(outputKey, result.buffer, result.metadata.mime);
-  const savingsPercent = calculateSavings(result.metadata.inputSize, result.metadata.outputSize);
 
   await jobFileRepo.updateStatus(fileId, {
     status: 'completed',
@@ -46,19 +46,28 @@ async function processConversion(job) {
   await jobRepo.incrementCompletedFiles(jobId);
   await resolveJobStatus(jobId);
 
+  const durationMs = Date.now() - startTime;
+  const { inputSize, outputSize } = result.metadata;
+  const savingsPercent = inputSize > 0
+    ? ((inputSize - outputSize) / inputSize * 100).toFixed(1)
+    : '0.0';
+
   log.info({
+    durationMs,
+    inputSize,
+    outputSize,
+    savingsPercent: `${savingsPercent}%`,
     outputKey,
-    inputSize: result.metadata.inputSize,
-    outputSize: result.metadata.outputSize,
-    savingsPercent,
-  }, 'Conversion done');
+  }, 'Conversion completed');
 }
 
 async function handleFailure(job, err) {
   const { jobId, fileId } = job.data;
+  const attempt = job.attemptsMade;
+  const maxAttempts = job.opts?.attempts ?? 2;
   const log = logger.child({ jobId, fileId });
 
-  log.error({ err }, 'Conversion failed');
+  log.error({ err, attempt, maxAttempts }, 'Conversion failed');
 
   await jobFileRepo.updateStatus(fileId, {
     status: 'failed',
@@ -78,7 +87,12 @@ async function resolveJobStatus(jobId) {
 
   await jobRepo.updateStatus(jobId, 'completed');
 
-  logger.info({ jobId, completed: job.completed_files, failed: job.failed_files }, 'Job finished');
+  logger.info({
+    jobId,
+    totalFiles: job.total_files,
+    completed: job.completed_files,
+    failed: job.failed_files,
+  }, 'Job finished');
 }
 
 const worker = new Worker(QUEUE_NAME, processConversion, {

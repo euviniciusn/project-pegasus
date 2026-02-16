@@ -6,9 +6,9 @@ const fileSchema = {
   type: 'object',
   required: ['name', 'size', 'type'],
   properties: {
-    name: { type: 'string', minLength: 1 },
+    name: { type: 'string', minLength: 1, maxLength: 255 },
     size: { type: 'integer', minimum: 1 },
-    type: { type: 'string', minLength: 1 },
+    type: { type: 'string', enum: ['image/png', 'image/jpeg'] },
   },
 };
 
@@ -17,10 +17,11 @@ const createJobSchema = {
     type: 'object',
     required: ['files', 'outputFormat'],
     properties: {
-      files: { type: 'array', items: fileSchema, minItems: 1 },
+      files: { type: 'array', items: fileSchema, minItems: 1, maxItems: 20 },
       outputFormat: { type: 'string', enum: ['webp', 'jpg', 'png'] },
       quality: { type: 'integer', minimum: 1, maximum: 100 },
     },
+    additionalProperties: false,
   },
 };
 
@@ -44,10 +45,25 @@ const downloadParamsSchema = {
 };
 
 function jobRoutes(fastify, _opts, done) {
-  fastify.post('/', { schema: createJobSchema }, jobController.createJob);
-  fastify.post('/:id/start', { schema: jobIdParamsSchema }, jobController.startJob);
-  fastify.get('/:id', { schema: jobIdParamsSchema }, jobController.getJobStatus);
-  fastify.get('/:id/download/:fileId', { schema: downloadParamsSchema }, jobController.downloadFile);
+  fastify.post('/', {
+    schema: createJobSchema,
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, jobController.createJob);
+
+  fastify.post('/:id/start', {
+    schema: jobIdParamsSchema,
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+  }, jobController.startJob);
+
+  fastify.get('/:id', {
+    schema: jobIdParamsSchema,
+    config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
+  }, jobController.getJobStatus);
+
+  fastify.get('/:id/download/:fileId', {
+    schema: downloadParamsSchema,
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+  }, jobController.downloadFile);
 
   done();
 }

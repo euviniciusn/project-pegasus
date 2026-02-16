@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os';
 import { config as dotenvConfig } from 'dotenv';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,8 @@ function requireEnv(name) {
   return value;
 }
 
+const cpuCount = availableParallelism();
+
 const config = {
   server: {
     port: parseInt(process.env.PORT, 10) || 3000,
@@ -24,6 +27,9 @@ const config = {
 
   database: {
     url: requireEnv('DATABASE_URL'),
+    poolMin: parseInt(process.env.DB_POOL_MIN, 10) || 2,
+    poolMax: parseInt(process.env.DB_POOL_MAX, 10) || 10,
+    statementTimeout: parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) || 10000,
   },
 
   redis: {
@@ -44,6 +50,7 @@ const config = {
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 20 * 1024 * 1024,
     maxFilesPerJob: parseInt(process.env.MAX_FILES_PER_JOB, 10) || 20,
+    maxTotalJobSize: parseInt(process.env.MAX_TOTAL_JOB_SIZE, 10) || 100 * 1024 * 1024,
   },
 
   session: {
@@ -53,7 +60,7 @@ const config = {
   conversion: {
     defaultQuality: parseInt(process.env.DEFAULT_QUALITY, 10) || 82,
     timeout: parseInt(process.env.CONVERSION_TIMEOUT, 10) || 30000,
-    concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || 4,
+    concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || Math.max(2, cpuCount - 1),
   },
 };
 

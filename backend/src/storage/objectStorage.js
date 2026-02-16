@@ -28,6 +28,26 @@ function toPublicUrl(url) {
   return url.replace(internalBase, publicBase);
 }
 
+const downloadUrlCache = new Map();
+const CACHE_MARGIN_MS = 5 * 60 * 1000;
+
+function getCachedDownloadUrl(key) {
+  const entry = downloadUrlCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt - CACHE_MARGIN_MS) {
+    downloadUrlCache.delete(key);
+    return null;
+  }
+  return entry.url;
+}
+
+function setCachedDownloadUrl(key, url, expiresIn) {
+  downloadUrlCache.set(key, {
+    url,
+    expiresAt: Date.now() + expiresIn * 1000,
+  });
+}
+
 function wrapError(action, key, err) {
   if (err instanceof StorageError) throw err;
   throw new StorageError(`Failed to ${action} "${key}": ${err.message}`);
@@ -84,11 +104,16 @@ export async function getPresignedUploadUrl(key, contentType, expiresIn = config
 }
 
 export async function getPresignedDownloadUrl(key, expiresIn = config.minio.presignedUrlExpiry) {
+  const cached = getCachedDownloadUrl(key);
+  if (cached) return cached;
+
   try {
     const url = await getSignedUrl(s3, new GetObjectCommand({
       Bucket: bucket, Key: key,
     }), { expiresIn });
-    return toPublicUrl(url);
+    const publicUrl = toPublicUrl(url);
+    setCachedDownloadUrl(key, publicUrl, expiresIn);
+    return publicUrl;
   } catch (err) {
     wrapError('generate download URL for', key, err);
   }
