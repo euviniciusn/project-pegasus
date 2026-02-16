@@ -4,6 +4,12 @@ import { FILE_STATUS } from '../constants/index.js';
 import FileCard from '../components/FileCard.jsx';
 import ResultsSummary from '../components/ResultsSummary.jsx';
 
+function replaceExtension(fileName, format) {
+  const dot = fileName.lastIndexOf('.');
+  const base = dot > 0 ? fileName.slice(0, dot) : fileName;
+  return `${base}.${format}`;
+}
+
 function triggerDownload(url, fileName) {
   const a = document.createElement('a');
   a.href = url;
@@ -14,28 +20,29 @@ function triggerDownload(url, fileName) {
 }
 
 export default function ResultsContainer() {
-  const { jobFiles, previews, isCompleted, getDownloadUrl, reset } = useJobContext();
+  const { job, jobFiles, previews, isCompleted, getDownloadUrl, reset } = useJobContext();
+  const outputFormat = job?.output_format;
 
-  const handleDownload = useCallback((fileId, fileName) => async () => {
+  const handleDownload = useCallback((fileId, originalName) => async () => {
     try {
       const { url } = await getDownloadUrl(fileId);
-      triggerDownload(url, fileName);
+      triggerDownload(url, replaceExtension(originalName, outputFormat));
     } catch {
       /* error handled by context */
     }
-  }, [getDownloadUrl]);
+  }, [getDownloadUrl, outputFormat]);
 
   const handleDownloadAll = useCallback(async () => {
     const completed = jobFiles.filter((f) => f.status === FILE_STATUS.COMPLETED);
     for (const file of completed) {
       try {
         const { url } = await getDownloadUrl(file.id);
-        triggerDownload(url, file.original_name);
+        triggerDownload(url, replaceExtension(file.original_name, outputFormat));
       } catch {
         /* best effort */
       }
     }
-  }, [jobFiles, getDownloadUrl]);
+  }, [jobFiles, getDownloadUrl, outputFormat]);
 
   if (jobFiles.length === 0) return null;
 
