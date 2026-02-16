@@ -47,7 +47,8 @@ SavingsBadge.propTypes = {
 export default function FileCard({ file, localFile, status, convertedSize, onRemove, onDownload }) {
   const [preview, setPreview] = useState(null);
   const name = file?.original_name || localFile?.name;
-  const size = file?.original_size || localFile?.size;
+  const rawSize = file?.original_size ?? localFile?.size;
+  const size = rawSize != null ? Number(rawSize) : undefined;
   const isComplete = status === FILE_STATUS.COMPLETED;
   const isFailed = status === FILE_STATUS.FAILED;
 

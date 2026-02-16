@@ -66,7 +66,7 @@ export async function countByJobIdAndStatus(jobId, status) {
 
 export async function findByJobIdWithStatus(jobId) {
   const { rows } = await pool.query(
-    'SELECT id, original_name, status, converted_size, error_message FROM job_files WHERE job_id = $1 ORDER BY created_at',
+    'SELECT id, original_name, original_size, status, converted_size, error_message FROM job_files WHERE job_id = $1 ORDER BY created_at',
     [jobId],
   );
   return rows;
