@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { OUTPUT_FORMATS } from '../constants/index.js';
 
-const FORMAT_LABELS = { webp: 'WebP', png: 'PNG', jpg: 'JPG' };
+const FORMAT_LABELS = { webp: 'WebP', png: 'PNG', jpg: 'JPG', avif: 'AVIF' };
+const NEW_FORMATS = new Set(['avif']);
 
 function hasAlphaFiles(files) {
   return files.some((f) => f.type === 'image/png');
@@ -10,7 +11,7 @@ function hasAlphaFiles(files) {
 
 export default function FormatSelector({ value, onChange, files }) {
   const showAlphaWarning = useMemo(
-    () => value === 'jpg' && hasAlphaFiles(files),
+    () => (value === 'jpg' || value === 'avif') && hasAlphaFiles(files),
     [value, files],
   );
 
@@ -36,13 +37,18 @@ export default function FormatSelector({ value, onChange, files }) {
             `}
           >
             {FORMAT_LABELS[format]}
+            {NEW_FORMATS.has(format) && (
+              <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold leading-none rounded-full bg-green-100 text-green-700">
+                Novo
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {showAlphaWarning && (
         <p className="text-xs text-yellow-600">
-          JPG não suporta transparência. PNGs com alpha terão fundo branco.
+          {value === 'jpg' ? 'JPG' : 'AVIF'} não suporta transparência. PNGs com alpha terão fundo branco.
         </p>
       )}
     </div>

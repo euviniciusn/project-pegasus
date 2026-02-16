@@ -22,26 +22,47 @@ async function request(method, path, body) {
   return data.data;
 }
 
-export async function createJob({ files, outputFormat, quality }) {
-  return request('POST', '/jobs', { files, outputFormat, quality });
+export async function createJob({ files, outputFormat, quality, width, height, resizePercent }) {
+  const body = { files, outputFormat, quality };
+  if (width) body.width = width;
+  if (height) body.height = height;
+  if (resizePercent) body.resizePercent = resizePercent;
+  return request('POST', '/jobs', body);
 }
 
-export async function uploadFileToPresigned(url, file) {
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type },
-    body: file,
+export function uploadFileWithProgress(url, file, { onProgress, signal }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', file.type);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress({ loaded: e.loaded, total: e.total });
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload failed (${xhr.status})`));
+    };
+
+    xhr.onerror = () => reject(new Error('Upload network error'));
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+        reject(new Error('Upload cancelled'));
+      });
+    }
+
+    xhr.send(file);
   });
-
-  if (!response.ok) {
-    throw new Error(`Upload failed (${response.status})`);
-  }
-
-  return response;
 }
 
-export async function startJob(jobId) {
-  return request('POST', `/jobs/${jobId}/start`);
+export async function startJob(jobId, excludeFileIds) {
+  const body = excludeFileIds?.length ? { excludeFileIds } : undefined;
+  return request('POST', `/jobs/${jobId}/start`, body);
 }
 
 export async function getJobStatus(jobId) {

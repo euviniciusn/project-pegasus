@@ -1,5 +1,6 @@
 import { useJobContext } from '../contexts/JobContext.jsx';
 import UploadContainer from '../containers/UploadContainer.jsx';
+import UploadPhaseContainer from '../containers/UploadPhaseContainer.jsx';
 import ResultsContainer from '../containers/ResultsContainer.jsx';
 
 function VectaLogo() {
@@ -56,8 +57,12 @@ function Footer() {
 }
 
 export default function ConverterPage() {
-  const { isProcessing, isCompleted, jobFiles } = useJobContext();
+  const { isProcessing, isCompleted, jobFiles, isUploadPhase } = useJobContext();
   const hasActiveJob = isProcessing || isCompleted || jobFiles.length > 0;
+
+  const showUploadPhase = isUploadPhase && !hasActiveJob;
+  const showResults = hasActiveJob && !isUploadPhase;
+  const showSelection = !showUploadPhase && !showResults;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -65,12 +70,17 @@ export default function ConverterPage() {
         <Header />
 
         <main className="flex-1 flex flex-col gap-6 py-4">
-          {!hasActiveJob && (
+          {showSelection && (
             <div key="upload" className="animate-fade-in">
               <UploadContainer />
             </div>
           )}
-          {hasActiveJob && (
+          {showUploadPhase && (
+            <div key="upload-phase" className="animate-slide-up">
+              <UploadPhaseContainer />
+            </div>
+          )}
+          {showResults && (
             <div key="results" className="animate-slide-up">
               <ResultsContainer />
             </div>

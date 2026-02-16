@@ -59,7 +59,8 @@ const config = {
 
   conversion: {
     defaultQuality: parseInt(process.env.DEFAULT_QUALITY, 10) || 82,
-    timeout: parseInt(process.env.CONVERSION_TIMEOUT, 10) || 30000,
+    timeout: parseInt(process.env.CONVERSION_TIMEOUT, 10) || 60000,
+    avifSpeed: parseInt(process.env.AVIF_SPEED, 10) || 5,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || Math.max(2, cpuCount - 1),
   },
 };

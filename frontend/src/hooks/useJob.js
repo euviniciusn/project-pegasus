@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import {
   createJob,
-  uploadFileToPresigned,
   startJob as apiStartJob,
   getJobStatus,
 } from '../services/api.js';
@@ -10,6 +9,21 @@ import usePolling from './usePolling.js';
 
 function isTerminalStatus(status) {
   return status === JOB_STATUS.COMPLETED || status === JOB_STATUS.FAILED;
+}
+
+function buildApiPayload(localFiles, outputFormat, quality, resizeOptions) {
+  const files = localFiles.map((f) => ({ name: f.name, size: f.size, type: f.type }));
+  const payload = { files, outputFormat, quality };
+  const { resizePreset, customWidth, customHeight } = resizeOptions;
+
+  if (resizePreset === '50' || resizePreset === '25') {
+    payload.resizePercent = parseInt(resizePreset, 10);
+  } else if (resizePreset === 'custom') {
+    if (customWidth) payload.width = customWidth;
+    if (customHeight) payload.height = customHeight;
+  }
+
+  return payload;
 }
 
 export default function useJob() {
@@ -43,19 +57,7 @@ export default function useJob() {
 
   usePolling(pollStatus, POLLING_INTERVAL, isPolling);
 
-  const uploadFiles = useCallback(async (uploadUrls, localFiles) => {
-    const fileMap = new Map(localFiles.map((f) => [f.name, f]));
-
-    await Promise.all(
-      uploadUrls.map(({ url, key }) => {
-        const fileName = key.split('/').pop();
-        const file = fileMap.get(fileName);
-        return uploadFileToPresigned(url, file);
-      }),
-    );
-  }, []);
-
-  const startConversion = useCallback(async (localFiles, outputFormat, quality) => {
+  const createAndPrepare = useCallback(async (localFiles, outputFormat, quality, resizeOptions = {}) => {
     setError(null);
     setIsProcessing(true);
     setIsCompleted(false);
@@ -68,28 +70,22 @@ export default function useJob() {
     }
     setPreviews(previewMap);
 
+    const payload = buildApiPayload(localFiles, outputFormat, quality, resizeOptions);
+    const { jobId, uploadUrls } = await createJob(payload);
+    jobIdRef.current = jobId;
+
+    return { jobId, uploadUrls };
+  }, []);
+
+  const confirmAndStart = useCallback(async (excludeFileIds) => {
     try {
-      const fileMeta = localFiles.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type,
-      }));
-
-      const { jobId, uploadUrls } = await createJob({
-        files: fileMeta,
-        outputFormat,
-        quality,
-      });
-
-      jobIdRef.current = jobId;
-      await uploadFiles(uploadUrls, localFiles);
-      await apiStartJob(jobId);
+      await apiStartJob(jobIdRef.current, excludeFileIds);
       setIsPolling(true);
     } catch (err) {
       setError(err.message);
       setIsProcessing(false);
     }
-  }, [uploadFiles]);
+  }, []);
 
   const reset = useCallback(() => {
     setIsPolling(false);
@@ -112,7 +108,8 @@ export default function useJob() {
     isProcessing,
     isCompleted,
     error,
-    startConversion,
+    createAndPrepare,
+    confirmAndStart,
     reset,
   };
 }

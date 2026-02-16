@@ -5,13 +5,16 @@ import FileDropzone from '../components/FileDropzone.jsx';
 import FileCard from '../components/FileCard.jsx';
 import FormatSelector from '../components/FormatSelector.jsx';
 import QualitySlider from '../components/QualitySlider.jsx';
+import ResizeSelector from '../components/ResizeSelector.jsx';
 import ConvertButton from '../components/ConvertButton.jsx';
 
 export default function UploadContainer() {
   const {
     files, outputFormat, quality, errors, error,
     isProcessing, isCompleted,
+    resizePreset, customWidth, customHeight, isAspectRatioLocked, fileDimensions,
     addFiles, removeFile, setOutputFormat, setQuality, startConversion,
+    setResizePreset, setCustomWidth, setCustomHeight, setIsAspectRatioLocked,
   } = useJobContext();
   const { addToast } = useToast();
   const prevErrorRef = useRef(null);
@@ -60,6 +63,18 @@ export default function UploadContainer() {
               value={quality}
               onChange={setQuality}
               outputFormat={outputFormat}
+            />
+            <ResizeSelector
+              resizePreset={resizePreset}
+              customWidth={customWidth}
+              customHeight={customHeight}
+              isAspectRatioLocked={isAspectRatioLocked}
+              fileDimensions={fileDimensions}
+              files={files}
+              onPresetChange={setResizePreset}
+              onWidthChange={setCustomWidth}
+              onHeightChange={setCustomHeight}
+              onAspectRatioLockToggle={() => setIsAspectRatioLocked((prev) => !prev)}
             />
           </div>
 

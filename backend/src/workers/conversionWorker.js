@@ -26,11 +26,21 @@ async function processConversion(job) {
     log.warn('Retrying conversion');
   }
 
-  log.info({ outputFormat, quality: options?.quality }, 'Starting conversion');
+  log.info({
+    outputFormat,
+    quality: options?.quality,
+    resizeWidth: options?.resizeWidth,
+    resizeHeight: options?.resizeHeight,
+    resizePercent: options?.resizePercent,
+  }, 'Starting conversion');
   await jobFileRepo.updateStatus(fileId, { status: 'processing' });
 
   const inputBuffer = await downloadFile(inputKey);
-  const result = await convertImage(inputBuffer, { outputFormat, ...options });
+  const conversionOpts = { outputFormat, ...options };
+  if (outputFormat === 'avif') {
+    conversionOpts.avifSpeed = config.conversion.avifSpeed;
+  }
+  const result = await convertImage(inputBuffer, conversionOpts);
 
   const file = await jobFileRepo.findById(fileId);
   const outputKey = buildOutputKey(jobId, file.original_name, outputFormat);

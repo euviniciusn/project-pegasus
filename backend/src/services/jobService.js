@@ -37,12 +37,15 @@ async function createFileAndUploadUrl(jobId, file, outputFormat) {
   return { fileId: jobFile.id, url, key: inputKey };
 }
 
-export async function createJob({ sessionToken, files, outputFormat, quality }) {
+export async function createJob({ sessionToken, files, outputFormat, quality, resizeWidth, resizeHeight, resizePercent }) {
   const job = await jobRepo.createJob({
     sessionToken,
     outputFormat,
     quality,
     fileCount: files.length,
+    resizeWidth,
+    resizeHeight,
+    resizePercent,
   });
 
   const uploadUrls = await Promise.all(
@@ -71,24 +74,53 @@ async function enqueueFiles(job, files) {
       fileId: file.id,
       inputKey: file.original_key,
       outputFormat: job.output_format,
-      options: { quality: job.quality },
+      options: {
+        quality: job.quality,
+        resizeWidth: job.resize_width,
+        resizeHeight: job.resize_height,
+        resizePercent: job.resize_percent,
+      },
     }),
   );
   await Promise.all(jobs);
 }
 
-export async function startJob(jobId, sessionToken) {
+async function excludeSkippedFiles(jobId, excludeFileIds) {
+  const excludeSet = new Set(excludeFileIds);
+  const updates = excludeFileIds.map((fileId) =>
+    jobFileRepo.updateStatus(fileId, { status: 'failed', errorMessage: 'Upload skipped' }),
+  );
+  await Promise.all(updates);
+
+  for (let i = 0; i < excludeFileIds.length; i++) {
+    await jobRepo.incrementFailedFiles(jobId);
+  }
+
+  return excludeSet;
+}
+
+export async function startJob(jobId, sessionToken, excludeFileIds) {
   const job = await findJobOrFail(jobId, sessionToken);
 
   if (job.status !== 'pending') {
     throw new ValidationError(`Job cannot be started (current status: ${job.status})`);
   }
 
-  const files = await jobFileRepo.findByJobId(jobId);
-  await verifyFilesUploaded(files);
+  let excludeSet = new Set();
+  if (excludeFileIds?.length) {
+    excludeSet = await excludeSkippedFiles(jobId, excludeFileIds);
+  }
 
+  const allFiles = await jobFileRepo.findByJobId(jobId);
+  const filesToProcess = allFiles.filter((f) => !excludeSet.has(f.id));
+
+  if (filesToProcess.length === 0) {
+    throw new ValidationError('No files to process after excluding failed uploads');
+  }
+
+  await verifyFilesUploaded(filesToProcess);
   await jobRepo.updateStatus(jobId, 'processing');
-  await enqueueFiles(job, files);
+  await enqueueFiles(job, filesToProcess);
 }
 
 export async function getJobStatus(jobId, sessionToken) {

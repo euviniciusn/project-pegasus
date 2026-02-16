@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { FILE_STATUS } from '../constants/index.js';
+import { FILE_STATUS, UPLOAD_STATUS } from '../constants/index.js';
 import formatBytes from '../utils/formatBytes.js';
+import UploadProgressBar from './UploadProgressBar.jsx';
 
 function StatusBadge({ status }) {
   const config = {
@@ -44,13 +45,17 @@ SavingsBadge.propTypes = {
   convertedSize: PropTypes.number,
 };
 
-export default function FileCard({ file, localFile, previewUrl, status, convertedSize, onRemove, onDownload }) {
+export default function FileCard({
+  file, localFile, previewUrl, status, convertedSize, onRemove, onDownload,
+  uploadStatus, uploadProgress, uploadSpeed, uploadError, onRetry, onCancel,
+}) {
   const [localPreview, setLocalPreview] = useState(null);
   const name = file?.original_name || localFile?.name;
   const rawSize = file?.original_size ?? localFile?.size;
   const size = rawSize != null ? Number(rawSize) : undefined;
   const isComplete = status === FILE_STATUS.COMPLETED;
   const isFailed = status === FILE_STATUS.FAILED;
+  const isUploadFailed = uploadStatus === UPLOAD_STATUS.FAILED || uploadStatus === UPLOAD_STATUS.CANCELLED;
   const preview = previewUrl || localPreview;
 
   useEffect(() => {
@@ -69,9 +74,11 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
     <div className={`
       flex items-center gap-3 rounded-2xl p-3
       border transition-all duration-300
-      ${isFailed
+      ${isFailed || isUploadFailed
         ? 'border-red-200 bg-red-50'
-        : 'border-neutral-200 bg-white shadow-sm hover:shadow-md hover:border-neutral-300'}
+        : uploadStatus === UPLOAD_STATUS.UPLOADING
+          ? 'border-primary-200 bg-primary-50/30 shadow-sm'
+          : 'border-neutral-200 bg-white shadow-sm hover:shadow-md hover:border-neutral-300'}
     `}>
       <div className="w-10 h-10 rounded-xl overflow-hidden bg-neutral-100 shrink-0">
         {preview && <img src={preview} alt={name} loading="lazy" className="w-full h-full object-cover" />}
@@ -83,8 +90,44 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
           <span className="text-xs text-neutral-400">{formatBytes(size)}</span>
           {isComplete && <SavingsBadge originalSize={size} convertedSize={convertedSize} />}
           {status && <StatusBadge status={status} />}
+          {!status && uploadStatus === UPLOAD_STATUS.PENDING && (
+            <span className="text-xs text-neutral-400">Na fila...</span>
+          )}
+          {!status && uploadStatus === UPLOAD_STATUS.COMPLETED && (
+            <span className="text-xs text-green-600 font-medium">✓ Enviado</span>
+          )}
+          {!status && isUploadFailed && (
+            <span className="text-xs text-red-500 font-medium">{uploadError || 'Falha no envio'}</span>
+          )}
         </div>
+        {uploadStatus === UPLOAD_STATUS.UPLOADING && (
+          <UploadProgressBar progress={uploadProgress || 0} speed={uploadSpeed} />
+        )}
       </div>
+
+      {uploadStatus === UPLOAD_STATUS.UPLOADING && onCancel && (
+        <button
+          onClick={onCancel}
+          className="w-8 h-8 flex items-center justify-center rounded-full
+            text-neutral-400 hover:text-red-500 hover:bg-red-50
+            transition-all duration-200 shrink-0"
+          aria-label="Cancelar upload"
+        >
+          ✕
+        </button>
+      )}
+
+      {isUploadFailed && onRetry && (
+        <button
+          onClick={onRetry}
+          className="w-8 h-8 flex items-center justify-center rounded-full
+            bg-primary-50 text-primary-600 hover:bg-primary-100
+            transition-all duration-200 shrink-0"
+          aria-label="Tentar novamente"
+        >
+          ↻
+        </button>
+      )}
 
       {isComplete && onDownload && (
         <button
@@ -102,7 +145,7 @@ export default function FileCard({ file, localFile, previewUrl, status, converte
         </button>
       )}
 
-      {onRemove && !status && (
+      {onRemove && !status && !uploadStatus && (
         <button
           onClick={handleRemove}
           className="text-neutral-400 hover:text-red-500 p-1 rounded-lg
@@ -123,4 +166,10 @@ FileCard.propTypes = {
   convertedSize: PropTypes.number,
   onRemove: PropTypes.func,
   onDownload: PropTypes.func,
+  uploadStatus: PropTypes.string,
+  uploadProgress: PropTypes.number,
+  uploadSpeed: PropTypes.number,
+  uploadError: PropTypes.string,
+  onRetry: PropTypes.func,
+  onCancel: PropTypes.func,
 };

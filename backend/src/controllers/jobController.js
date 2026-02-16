@@ -3,7 +3,7 @@ import config from '../config/index.js';
 import { ValidationError, FileTooLargeError } from '../errors/index.js';
 
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg'];
-const ALLOWED_OUTPUT_FORMATS = ['png', 'jpg', 'webp'];
+const ALLOWED_OUTPUT_FORMATS = ['png', 'jpg', 'webp', 'avif'];
 const DANGEROUS_FILENAME_PATTERN = /[<>:"/\\|?*\x00-\x1f]|\.{2,}/;
 
 function sanitizeFileName(name) {
@@ -64,17 +64,30 @@ function validateOutputFormat(format) {
   }
 }
 
+function validateResizeOptions({ width, height, resizePercent }) {
+  const hasPixelResize = width !== undefined || height !== undefined;
+  const hasPercentResize = resizePercent !== undefined;
+
+  if (hasPixelResize && hasPercentResize) {
+    throw new ValidationError('Cannot specify both pixel dimensions and resize percentage');
+  }
+}
+
 export async function createJob(request, reply) {
-  const { files, outputFormat, quality } = request.body;
+  const { files, outputFormat, quality, width, height, resizePercent } = request.body;
 
   validateFiles(files);
   validateOutputFormat(outputFormat);
+  validateResizeOptions({ width, height, resizePercent });
 
   const result = await jobService.createJob({
     sessionToken: request.sessionToken,
     files,
     outputFormat,
     quality,
+    resizeWidth: width,
+    resizeHeight: height,
+    resizePercent,
   });
 
   return reply.status(201).send({
@@ -85,8 +98,9 @@ export async function createJob(request, reply) {
 
 export async function startJob(request, reply) {
   const { id } = request.params;
+  const excludeFileIds = request.body?.excludeFileIds;
 
-  await jobService.startJob(id, request.sessionToken);
+  await jobService.startJob(id, request.sessionToken, excludeFileIds);
 
   return reply.send({
     success: true,

@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TYPE image_format ADD VALUE IF NOT EXISTS 'avif';
+
+COMMIT;

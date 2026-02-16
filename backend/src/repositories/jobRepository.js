@@ -1,14 +1,23 @@
 import pool from '../db/connection.js';
 import config from '../config/index.js';
 
-export async function createJob({ sessionToken, outputFormat, quality, fileCount }) {
+export async function createJob({ sessionToken, outputFormat, quality, fileCount, resizeWidth, resizeHeight, resizePercent }) {
   const expiresAt = new Date(Date.now() + config.session.ttl * 1000);
 
   const { rows } = await pool.query(
-    `INSERT INTO jobs (session_token, output_format, quality, total_files, expires_at)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO jobs (session_token, output_format, quality, total_files, expires_at, resize_width, resize_height, resize_percent)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [sessionToken, outputFormat, quality ?? config.conversion.defaultQuality, fileCount, expiresAt],
+    [
+      sessionToken,
+      outputFormat,
+      quality ?? config.conversion.defaultQuality,
+      fileCount,
+      expiresAt,
+      resizeWidth ?? null,
+      resizeHeight ?? null,
+      resizePercent ?? null,
+    ],
   );
 
   return rows[0];

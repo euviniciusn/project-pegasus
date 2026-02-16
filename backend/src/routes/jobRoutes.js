@@ -18,8 +18,11 @@ const createJobSchema = {
     required: ['files', 'outputFormat'],
     properties: {
       files: { type: 'array', items: fileSchema, minItems: 1, maxItems: 20 },
-      outputFormat: { type: 'string', enum: ['webp', 'jpg', 'png'] },
+      outputFormat: { type: 'string', enum: ['webp', 'jpg', 'png', 'avif'] },
       quality: { type: 'integer', minimum: 1, maximum: 100 },
+      width: { type: 'integer', minimum: 1, maximum: 16383 },
+      height: { type: 'integer', minimum: 1, maximum: 16383 },
+      resizePercent: { type: 'integer', minimum: 1, maximum: 100 },
     },
     additionalProperties: false,
   },
@@ -50,8 +53,22 @@ function jobRoutes(fastify, _opts, done) {
     config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
   }, jobController.createJob);
 
+  const startJobSchema = {
+    ...jobIdParamsSchema,
+    body: {
+      type: 'object',
+      properties: {
+        excludeFileIds: {
+          type: 'array',
+          items: { type: 'string', pattern: uuidPattern },
+        },
+      },
+      additionalProperties: false,
+    },
+  };
+
   fastify.post('/:id/start', {
-    schema: jobIdParamsSchema,
+    schema: startJobSchema,
     config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
   }, jobController.startJob);
 
