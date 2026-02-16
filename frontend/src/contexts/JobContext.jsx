@@ -1,15 +1,25 @@
 import { createContext, useContext, useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useLocation } from 'react-router-dom';
 import useUpload from '../hooks/useUpload.js';
 import useJob from '../hooks/useJob.js';
 import useFileUploader from '../hooks/useFileUploader.js';
 import useLimits from '../hooks/useLimits.js';
 import { getDownloadUrl as apiGetDownloadUrl } from '../services/api.js';
 import { UPLOAD_STATUS } from '../constants/index.js';
+import groupFilesByConfig from '../utils/groupFilesByConfig.js';
+
+const PATHNAME_TO_MODE = { '/': 'convert', '/compress': 'compress', '/resize': 'resize' };
 
 const JobContext = createContext(null);
 
+function useMode() {
+  const { pathname } = useLocation();
+  return PATHNAME_TO_MODE[pathname] || 'convert';
+}
+
 export function JobProvider({ children }) {
+  const mode = useMode();
   const upload = useUpload();
   const jobHook = useJob();
   const fileUploader = useFileUploader();
@@ -19,23 +29,35 @@ export function JobProvider({ children }) {
 
   const startConversion = useCallback(async () => {
     try {
-      const { uploadUrls } = await jobHook.createAndPrepare(
-        upload.files, upload.outputFormat, upload.quality, {
-          resizePreset: upload.resizePreset,
-          customWidth: upload.customWidth,
-          customHeight: upload.customHeight,
-        },
+      const globalConfig = {
+        outputFormat: upload.outputFormat,
+        quality: upload.quality,
+        resizePreset: upload.resizePreset,
+        customWidth: upload.customWidth,
+        customHeight: upload.customHeight,
+      };
+
+      const groups = groupFilesByConfig(
+        upload.files, upload.applyToAll, globalConfig, upload.fileConfigs, mode,
       );
-      uploadUrlsRef.current = uploadUrls;
+
+      const results = await jobHook.createAndPrepare(groups);
+
+      const allUploadUrls = results.flatMap((r) => r.uploadUrls);
+      const allLocalFiles = results.flatMap((r) => r.localFiles);
+
+      uploadUrlsRef.current = allUploadUrls;
       setIsUploadPhase(true);
-      fileUploader.startAllUploads(uploadUrls, upload.files);
+      fileUploader.startAllUploads(allUploadUrls, allLocalFiles);
       limitsHook.refresh();
-    } catch (err) {
+    } catch {
       // createAndPrepare already sets error state in useJob
     }
   }, [
-    jobHook, fileUploader, limitsHook, upload.files, upload.outputFormat, upload.quality,
+    jobHook, fileUploader, limitsHook, mode,
+    upload.files, upload.outputFormat, upload.quality,
     upload.resizePreset, upload.customWidth, upload.customHeight,
+    upload.applyToAll, upload.fileConfigs,
   ]);
 
   useEffect(() => {
@@ -71,11 +93,15 @@ export function JobProvider({ children }) {
   }, [upload, fileUploader, jobHook]);
 
   const getDownloadUrl = useCallback((fileId) => {
-    if (!jobHook.job) return Promise.reject(new Error('No active job'));
-    return apiGetDownloadUrl(jobHook.job.id, fileId);
-  }, [jobHook.job]);
+    const targetJob = jobHook.jobs.find((j) =>
+      jobHook.files.some((f) => f.id === fileId && f.job_id === j.id),
+    ) || jobHook.job;
+    if (!targetJob) return Promise.reject(new Error('No active job'));
+    return apiGetDownloadUrl(targetJob.id, fileId);
+  }, [jobHook.jobs, jobHook.files, jobHook.job]);
 
   const value = useMemo(() => ({
+    mode,
     files: upload.files,
     outputFormat: upload.outputFormat,
     quality: upload.quality,
@@ -85,12 +111,15 @@ export function JobProvider({ children }) {
     customHeight: upload.customHeight,
     isAspectRatioLocked: upload.isAspectRatioLocked,
     fileDimensions: upload.fileDimensions,
+    applyToAll: upload.applyToAll,
+    fileConfigs: upload.fileConfigs,
     fileUploads: fileUploader.fileUploads,
     isUploadPhase,
     isUploadingFiles: fileUploader.isUploading,
     allUploadsCompleted: fileUploader.allCompleted,
     hasUploadFailures: fileUploader.hasFailures,
     job: jobHook.job,
+    jobs: jobHook.jobs,
     jobFiles: jobHook.files,
     previews: jobHook.previews,
     isProcessing: jobHook.isProcessing,
@@ -106,6 +135,8 @@ export function JobProvider({ children }) {
     setCustomWidth: upload.setCustomWidth,
     setCustomHeight: upload.setCustomHeight,
     setIsAspectRatioLocked: upload.setIsAspectRatioLocked,
+    setApplyToAll: upload.setApplyToAll,
+    setFileConfig: upload.setFileConfig,
     startConversion,
     confirmWithFailures,
     retryUpload: fileUploader.retryUpload,
@@ -113,17 +144,20 @@ export function JobProvider({ children }) {
     reset,
     getDownloadUrl,
   }), [
+    mode,
     upload.files, upload.outputFormat, upload.quality, upload.errors,
     upload.resizePreset, upload.customWidth, upload.customHeight,
     upload.isAspectRatioLocked, upload.fileDimensions,
+    upload.applyToAll, upload.fileConfigs,
     upload.addFiles, upload.removeFile, upload.setOutputFormat, upload.setQuality,
     upload.setResizePreset, upload.setCustomWidth, upload.setCustomHeight,
-    upload.setIsAspectRatioLocked,
+    upload.setIsAspectRatioLocked, upload.setApplyToAll, upload.setFileConfig,
     fileUploader.fileUploads, isUploadPhase, fileUploader.isUploading,
     fileUploader.allCompleted, fileUploader.hasFailures,
     fileUploader.retryUpload, fileUploader.cancelUpload,
-    jobHook.job, jobHook.files, jobHook.previews, jobHook.isProcessing,
-    jobHook.isCompleted, jobHook.error, limitsHook.limits, limitsHook.remaining,
+    jobHook.job, jobHook.jobs, jobHook.files, jobHook.previews,
+    jobHook.isProcessing, jobHook.isCompleted, jobHook.error,
+    limitsHook.limits, limitsHook.remaining,
     startConversion, confirmWithFailures, reset, getDownloadUrl,
   ]);
 

@@ -14,36 +14,47 @@ function isTerminalStatus(status) {
 function buildApiPayload(localFiles, outputFormat, quality, resizeOptions) {
   const files = localFiles.map((f) => ({ name: f.name, size: f.size, type: f.type }));
   const payload = { files, outputFormat, quality };
-  const { resizePreset, customWidth, customHeight } = resizeOptions;
+  const { resizePreset, customWidth, customHeight, resizePercent } = resizeOptions;
 
-  if (resizePreset === '50' || resizePreset === '25') {
+  if (resizePercent) {
+    payload.resizePercent = resizePercent;
+  } else if (resizePreset === '50' || resizePreset === '25') {
     payload.resizePercent = parseInt(resizePreset, 10);
-  } else if (resizePreset === 'custom') {
+  } else if (resizePreset === 'custom' || customWidth) {
     if (customWidth) payload.width = customWidth;
     if (customHeight) payload.height = customHeight;
+  } else if (resizePreset) {
+    const px = parseInt(resizePreset, 10);
+    if (px >= 100) payload.width = px;
   }
 
   return payload;
 }
 
 export default function useJob() {
-  const [job, setJob] = useState(null);
+  const [jobs, setJobs] = useState([]);
   const [files, setFiles] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState(null);
-  const jobIdRef = useRef(null);
+  const jobIdsRef = useRef([]);
   const [isPolling, setIsPolling] = useState(false);
   const [previews, setPreviews] = useState({});
 
   const pollStatus = useCallback(async () => {
-    if (!jobIdRef.current) return;
+    if (jobIdsRef.current.length === 0) return;
     try {
-      const data = await getJobStatus(jobIdRef.current);
-      setJob(data.job);
-      setFiles(data.files);
+      const results = await Promise.all(
+        jobIdsRef.current.map((id) => getJobStatus(id)),
+      );
 
-      if (isTerminalStatus(data.job.status)) {
+      const mergedJobs = results.map((r) => r.job);
+      const mergedFiles = results.flatMap((r) => r.files);
+      setJobs(mergedJobs);
+      setFiles(mergedFiles);
+
+      const allTerminal = mergedJobs.every((j) => isTerminalStatus(j.status));
+      if (allTerminal) {
         setIsPolling(false);
         setIsProcessing(false);
         setIsCompleted(true);
@@ -57,29 +68,41 @@ export default function useJob() {
 
   usePolling(pollStatus, POLLING_INTERVAL, isPolling);
 
-  const createAndPrepare = useCallback(async (localFiles, outputFormat, quality, resizeOptions = {}) => {
+  const createAndPrepare = useCallback(async (groups) => {
     setError(null);
     setIsProcessing(true);
     setIsCompleted(false);
-    setJob(null);
+    setJobs([]);
     setFiles([]);
 
     const previewMap = {};
-    for (const f of localFiles) {
-      previewMap[f.name] = URL.createObjectURL(f);
+    for (const group of groups) {
+      for (const f of group.localFiles) {
+        if (!previewMap[f.name]) {
+          previewMap[f.name] = URL.createObjectURL(f);
+        }
+      }
     }
     setPreviews(previewMap);
 
-    const payload = buildApiPayload(localFiles, outputFormat, quality, resizeOptions);
-    const { jobId, uploadUrls } = await createJob(payload);
-    jobIdRef.current = jobId;
+    const allResults = [];
+    for (const group of groups) {
+      const payload = buildApiPayload(
+        group.localFiles, group.outputFormat, group.quality, group.resizeOptions,
+      );
+      const result = await createJob(payload);
+      allResults.push({ ...result, localFiles: group.localFiles });
+    }
 
-    return { jobId, uploadUrls };
+    jobIdsRef.current = allResults.map((r) => r.jobId);
+    return allResults;
   }, []);
 
   const confirmAndStart = useCallback(async (excludeFileIds) => {
     try {
-      await apiStartJob(jobIdRef.current, excludeFileIds);
+      for (const jobId of jobIdsRef.current) {
+        await apiStartJob(jobId, excludeFileIds);
+      }
       setIsPolling(true);
     } catch (err) {
       setError(err.message);
@@ -89,8 +112,8 @@ export default function useJob() {
 
   const reset = useCallback(() => {
     setIsPolling(false);
-    jobIdRef.current = null;
-    setJob(null);
+    jobIdsRef.current = [];
+    setJobs([]);
     setFiles([]);
     setIsProcessing(false);
     setIsCompleted(false);
@@ -101,8 +124,12 @@ export default function useJob() {
     });
   }, []);
 
+  // Backward-compatible: expose first job as `job`
+  const job = jobs.length > 0 ? jobs[0] : null;
+
   return {
     job,
+    jobs,
     files,
     previews,
     isProcessing,

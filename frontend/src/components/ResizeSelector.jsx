@@ -2,6 +2,11 @@ import { useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { RESIZE_PRESETS } from '../constants/index.js';
 
+function isPixelPreset(value) {
+  const num = parseInt(value, 10);
+  return num >= 100;
+}
+
 function LockIcon({ isLocked }) {
   if (isLocked) {
     return (
@@ -62,13 +67,40 @@ DimensionInput.propTypes = {
   isDisabled: PropTypes.bool,
 };
 
+function computeEstimatedDims(preset, firstDims, customWidth, customHeight) {
+  if (!firstDims) return null;
+  if (preset === 'original') return firstDims;
+  if (preset === '50') return { width: Math.round(firstDims.width / 2), height: Math.round(firstDims.height / 2) };
+  if (preset === '25') return { width: Math.round(firstDims.width / 4), height: Math.round(firstDims.height / 4) };
+  if (preset === 'custom' && customWidth && customHeight) return { width: customWidth, height: customHeight };
+  if (isPixelPreset(preset)) {
+    const targetWidth = parseInt(preset, 10);
+    const ratio = firstDims.width / firstDims.height;
+    return { width: targetWidth, height: Math.round(targetWidth / ratio) };
+  }
+  return null;
+}
+
 export default function ResizeSelector({
   resizePreset, customWidth, customHeight,
   isAspectRatioLocked, fileDimensions, files,
   onPresetChange, onWidthChange, onHeightChange, onAspectRatioLockToggle,
+  presets,
 }) {
+  const activePresets = presets || RESIZE_PRESETS;
   const firstDims = useMemo(() => getFirstFileDims(files, fileDimensions), [files, fileDimensions]);
   const aspectRatio = firstDims ? firstDims.width / firstDims.height : null;
+
+  const handlePresetChange = useCallback((value) => {
+    onPresetChange(value);
+    if (isPixelPreset(value) && firstDims) {
+      const targetWidth = parseInt(value, 10);
+      onWidthChange(targetWidth);
+      if (firstDims) {
+        onHeightChange(Math.round(targetWidth / (firstDims.width / firstDims.height)));
+      }
+    }
+  }, [onPresetChange, onWidthChange, onHeightChange, firstDims]);
 
   const handleWidthChange = useCallback((w) => {
     onWidthChange(w);
@@ -84,14 +116,12 @@ export default function ResizeSelector({
     }
   }, [onWidthChange, onHeightChange, isAspectRatioLocked, aspectRatio]);
 
-  const estimatedDims = useMemo(() => {
-    if (!firstDims) return null;
-    if (resizePreset === 'original') return firstDims;
-    if (resizePreset === '50') return { width: Math.round(firstDims.width / 2), height: Math.round(firstDims.height / 2) };
-    if (resizePreset === '25') return { width: Math.round(firstDims.width / 4), height: Math.round(firstDims.height / 4) };
-    if (resizePreset === 'custom' && customWidth && customHeight) return { width: customWidth, height: customHeight };
-    return null;
-  }, [resizePreset, firstDims, customWidth, customHeight]);
+  const estimatedDims = useMemo(
+    () => computeEstimatedDims(resizePreset, firstDims, customWidth, customHeight),
+    [resizePreset, firstDims, customWidth, customHeight],
+  );
+
+  const showCustomFields = resizePreset === 'custom';
 
   return (
     <div className="flex flex-col gap-3">
@@ -100,11 +130,11 @@ export default function ResizeSelector({
       </label>
 
       <div className="flex flex-wrap gap-2">
-        {RESIZE_PRESETS.map((preset) => (
+        {activePresets.map((preset) => (
           <button
             key={preset.value}
             type="button"
-            onClick={() => onPresetChange(preset.value)}
+            onClick={() => handlePresetChange(preset.value)}
             className={`
               px-3 py-1 rounded-full text-xs font-medium
               border transition-all duration-200
@@ -119,7 +149,7 @@ export default function ResizeSelector({
         ))}
       </div>
 
-      {resizePreset === 'custom' && (
+      {showCustomFields && (
         <div className="flex items-center gap-2">
           <DimensionInput
             value={customWidth}
@@ -168,4 +198,5 @@ ResizeSelector.propTypes = {
   onWidthChange: PropTypes.func.isRequired,
   onHeightChange: PropTypes.func.isRequired,
   onAspectRatioLockToggle: PropTypes.func.isRequired,
+  presets: PropTypes.array,
 };

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-function ButtonContent({ isProcessing, isCompleted }) {
+function ButtonContent({ isProcessing, isCompleted, label }) {
   if (isProcessing) {
     return (
       <span className="flex items-center gap-2">
@@ -10,17 +10,18 @@ function ButtonContent({ isProcessing, isCompleted }) {
     );
   }
 
-  if (isCompleted) return 'Converter novamente';
+  if (isCompleted) return `${label} novamente`;
 
-  return 'Converter';
+  return label;
 }
 
 ButtonContent.propTypes = {
   isProcessing: PropTypes.bool.isRequired,
   isCompleted: PropTypes.bool.isRequired,
+  label: PropTypes.string.isRequired,
 };
 
-export default function ConvertButton({ onClick, isDisabled, isProcessing, isCompleted }) {
+export default function ConvertButton({ onClick, isDisabled, isProcessing, isCompleted, label }) {
   return (
     <button
       type="button"
@@ -42,7 +43,7 @@ export default function ConvertButton({ onClick, isDisabled, isProcessing, isCom
           : undefined
       }
     >
-      <ButtonContent isProcessing={isProcessing} isCompleted={isCompleted} />
+      <ButtonContent isProcessing={isProcessing} isCompleted={isCompleted} label={label || 'Converter'} />
     </button>
   );
 }
@@ -52,4 +53,5 @@ ConvertButton.propTypes = {
   isDisabled: PropTypes.bool.isRequired,
   isProcessing: PropTypes.bool.isRequired,
   isCompleted: PropTypes.bool.isRequired,
+  label: PropTypes.string,
 };

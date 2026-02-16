@@ -40,3 +40,16 @@ export const RESIZE_PRESETS = [
   { value: '25', label: '25%' },
   { value: 'custom', label: 'Personalizado' },
 ];
+
+export const RESIZE_PRESETS_PAGE = [
+  { value: '50', label: '50%' },
+  { value: '25', label: '25%' },
+  { value: '1080', label: '1080px' },
+  { value: '720', label: '720px' },
+  { value: 'custom', label: 'Personalizado' },
+];
+
+export const MIME_TO_FORMAT = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+};

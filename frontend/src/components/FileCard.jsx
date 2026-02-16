@@ -48,6 +48,7 @@ SavingsBadge.propTypes = {
 export default function FileCard({
   file, localFile, previewUrl, status, convertedSize, onRemove, onDownload,
   uploadStatus, uploadProgress, uploadSpeed, uploadError, onRetry, onCancel,
+  controlsElement,
 }) {
   const [localPreview, setLocalPreview] = useState(null);
   const name = file?.original_name || localFile?.name;
@@ -103,6 +104,7 @@ export default function FileCard({
         {uploadStatus === UPLOAD_STATUS.UPLOADING && (
           <UploadProgressBar progress={uploadProgress || 0} speed={uploadSpeed} />
         )}
+        {controlsElement}
       </div>
 
       {uploadStatus === UPLOAD_STATUS.UPLOADING && onCancel && (
@@ -172,4 +174,5 @@ FileCard.propTypes = {
   uploadError: PropTypes.string,
   onRetry: PropTypes.func,
   onCancel: PropTypes.func,
+  controlsElement: PropTypes.node,
 };

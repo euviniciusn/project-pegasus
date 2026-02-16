@@ -1,21 +1,29 @@
 import { useCallback, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useJobContext } from '../contexts/JobContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
 import FileDropzone from '../components/FileDropzone.jsx';
 import FileCard from '../components/FileCard.jsx';
-import FormatSelector from '../components/FormatSelector.jsx';
-import QualitySlider from '../components/QualitySlider.jsx';
-import ResizeSelector from '../components/ResizeSelector.jsx';
+import FileCardControls from '../components/FileCardControls.jsx';
+import GlobalConfig from '../components/GlobalConfig.jsx';
 import ConvertButton from '../components/ConvertButton.jsx';
 import UsageBanner from '../components/UsageBanner.jsx';
 
-export default function UploadContainer() {
+const BUTTON_LABELS = {
+  convert: 'Converter',
+  compress: 'Comprimir',
+  resize: 'Redimensionar',
+};
+
+export default function UploadContainer({ mode }) {
   const {
     files, outputFormat, quality, errors, error,
     isProcessing, isCompleted, limits, remaining,
     resizePreset, customWidth, customHeight, isAspectRatioLocked, fileDimensions,
+    applyToAll, fileConfigs,
     addFiles, removeFile, setOutputFormat, setQuality, startConversion,
     setResizePreset, setCustomWidth, setCustomHeight, setIsAspectRatioLocked,
+    setApplyToAll, setFileConfig,
   } = useJobContext();
   const { addToast } = useToast();
   const prevErrorRef = useRef(null);
@@ -35,6 +43,14 @@ export default function UploadContainer() {
 
   const handleRemove = useCallback((index) => () => removeFile(index), [removeFile]);
 
+  const handleApplyToAllChange = useCallback((val) => {
+    setApplyToAll(val, mode);
+  }, [setApplyToAll, mode]);
+
+  const handleFileConfigChange = useCallback((index) => (partial) => {
+    setFileConfig(index, partial);
+  }, [setFileConfig]);
+
   const hasFiles = files.length > 0;
   const isLimitExhausted = remaining !== null && remaining <= 0;
 
@@ -52,44 +68,53 @@ export default function UploadContainer() {
                 <FileCard
                   localFile={file}
                   onRemove={handleRemove(index)}
+                  controlsElement={
+                    !applyToAll && fileConfigs[index]
+                      ? <FileCardControls
+                          mode={mode}
+                          config={fileConfigs[index]}
+                          onChange={handleFileConfigChange(index)}
+                        />
+                      : undefined
+                  }
                 />
               </div>
             ))}
           </div>
 
-          <div className="flex flex-col gap-5">
-            <FormatSelector
-              value={outputFormat}
-              onChange={setOutputFormat}
-              files={files}
-            />
-            <QualitySlider
-              value={quality}
-              onChange={setQuality}
-              outputFormat={outputFormat}
-            />
-            <ResizeSelector
-              resizePreset={resizePreset}
-              customWidth={customWidth}
-              customHeight={customHeight}
-              isAspectRatioLocked={isAspectRatioLocked}
-              fileDimensions={fileDimensions}
-              files={files}
-              onPresetChange={setResizePreset}
-              onWidthChange={setCustomWidth}
-              onHeightChange={setCustomHeight}
-              onAspectRatioLockToggle={() => setIsAspectRatioLocked((prev) => !prev)}
-            />
-          </div>
+          <GlobalConfig
+            mode={mode}
+            applyToAll={applyToAll}
+            onApplyToAllChange={handleApplyToAllChange}
+            outputFormat={outputFormat}
+            quality={quality}
+            files={files}
+            resizePreset={resizePreset}
+            customWidth={customWidth}
+            customHeight={customHeight}
+            isAspectRatioLocked={isAspectRatioLocked}
+            fileDimensions={fileDimensions}
+            onFormatChange={setOutputFormat}
+            onQualityChange={setQuality}
+            onPresetChange={setResizePreset}
+            onWidthChange={setCustomWidth}
+            onHeightChange={setCustomHeight}
+            onAspectRatioLockToggle={() => setIsAspectRatioLocked((prev) => !prev)}
+          />
 
           <ConvertButton
             onClick={startConversion}
             isDisabled={!hasFiles || isLimitExhausted}
             isProcessing={isProcessing}
             isCompleted={isCompleted}
+            label={BUTTON_LABELS[mode]}
           />
         </div>
       )}
     </div>
   );
 }
+
+UploadContainer.propTypes = {
+  mode: PropTypes.oneOf(['convert', 'compress', 'resize']).isRequired,
+};

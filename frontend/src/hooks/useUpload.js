@@ -4,6 +4,7 @@ import {
   MAX_FILE_SIZE,
   MAX_FILES_PER_JOB,
   DEFAULT_QUALITY,
+  MIME_TO_FORMAT,
 } from '../constants/index.js';
 import readImageDimensions from '../utils/readImageDimensions.js';
 
@@ -18,6 +19,17 @@ function validateFile(file) {
   return null;
 }
 
+function buildDefaultFileConfig(file, mode, globalConfig) {
+  const inputFormat = MIME_TO_FORMAT[file.type] || 'jpg';
+  return {
+    outputFormat: mode === 'convert' ? globalConfig.outputFormat : inputFormat,
+    quality: globalConfig.quality,
+    resizePreset: mode === 'resize' ? globalConfig.resizePreset : 'original',
+    customWidth: globalConfig.customWidth,
+    customHeight: globalConfig.customHeight,
+  };
+}
+
 export default function useUpload() {
   const [files, setFiles] = useState([]);
   const [outputFormat, setOutputFormat] = useState('webp');
@@ -28,6 +40,8 @@ export default function useUpload() {
   const [customHeight, setCustomHeight] = useState(null);
   const [isAspectRatioLocked, setIsAspectRatioLocked] = useState(true);
   const [fileDimensions, setFileDimensions] = useState({});
+  const [applyToAll, setApplyToAllRaw] = useState(true);
+  const [fileConfigs, setFileConfigs] = useState({});
 
   const addFiles = useCallback((fileList) => {
     const newErrors = [];
@@ -63,6 +77,39 @@ export default function useUpload() {
 
   const removeFile = useCallback((index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileConfigs((prev) => {
+      const next = {};
+      for (const [key, val] of Object.entries(prev)) {
+        const k = Number(key);
+        if (k < index) next[k] = val;
+        else if (k > index) next[k - 1] = val;
+      }
+      return next;
+    });
+  }, []);
+
+  const setApplyToAll = useCallback((val, mode) => {
+    setApplyToAllRaw(val);
+    if (!val) {
+      setFiles((currentFiles) => {
+        setFileConfigs(() => {
+          const configs = {};
+          const global = { outputFormat, quality, resizePreset, customWidth, customHeight };
+          currentFiles.forEach((file, i) => {
+            configs[i] = buildDefaultFileConfig(file, mode, global);
+          });
+          return configs;
+        });
+        return currentFiles;
+      });
+    }
+  }, [outputFormat, quality, resizePreset, customWidth, customHeight]);
+
+  const setFileConfig = useCallback((index, partial) => {
+    setFileConfigs((prev) => ({
+      ...prev,
+      [index]: { ...prev[index], ...partial },
+    }));
   }, []);
 
   const clearFiles = useCallback(() => {
@@ -73,6 +120,8 @@ export default function useUpload() {
     setCustomHeight(null);
     setIsAspectRatioLocked(true);
     setFileDimensions({});
+    setApplyToAllRaw(true);
+    setFileConfigs({});
   }, []);
 
   return {
@@ -85,6 +134,8 @@ export default function useUpload() {
     customHeight,
     isAspectRatioLocked,
     fileDimensions,
+    applyToAll,
+    fileConfigs,
     addFiles,
     removeFile,
     setOutputFormat,
@@ -93,6 +144,8 @@ export default function useUpload() {
     setCustomWidth,
     setCustomHeight,
     setIsAspectRatioLocked,
+    setApplyToAll,
+    setFileConfig,
     clearFiles,
   };
 }

@@ -23,31 +23,42 @@ function triggerDownload(url, fileName) {
   a.remove();
 }
 
-export default function ResultsContainer() {
-  const { job, jobFiles, previews, isProcessing, isCompleted, getDownloadUrl, reset } = useJobContext();
-  const { addToast } = useToast();
-  const outputFormat = job?.output_format;
+function inferOutputFormat(file) {
+  if (!file.converted_key) return null;
+  const ext = file.converted_key.split('.').pop();
+  return ext || null;
+}
 
-  const completedCount = job?.completed_files ?? 0;
-  const failedCount = job?.failed_files ?? 0;
-  const totalFiles = job?.total_files ?? 0;
+export default function ResultsContainer() {
+  const { jobs, jobFiles, previews, isProcessing, isCompleted, getDownloadUrl, reset } = useJobContext();
+  const { addToast } = useToast();
+
+  const totalFiles = jobs.reduce((sum, j) => sum + (j?.total_files ?? 0), 0);
+  const completedCount = jobs.reduce((sum, j) => sum + (j?.completed_files ?? 0), 0);
+  const failedCount = jobs.reduce((sum, j) => sum + (j?.failed_files ?? 0), 0);
   const hasFiles = jobFiles.length > 0;
   const isWaitingFirstPoll = isProcessing && !hasFiles;
+  const isSingleJob = jobs.length === 1;
 
-  const handleDownload = useCallback((fileId, originalName) => async () => {
+  const handleDownload = useCallback((fileId, originalName, file) => async () => {
     try {
       const { url } = await getDownloadUrl(fileId);
-      triggerDownload(url, replaceExtension(originalName, outputFormat));
+      const format = inferOutputFormat(file);
+      triggerDownload(url, format ? replaceExtension(originalName, format) : originalName);
     } catch {
       addToast('Falha ao gerar link de download', 'error');
     }
-  }, [getDownloadUrl, outputFormat, addToast]);
+  }, [getDownloadUrl, addToast]);
 
   const handleDownloadAll = useCallback(() => {
-    if (!job?.id) return;
-    const url = getDownloadAllUrl(job.id);
-    window.open(url, '_blank');
-  }, [job?.id]);
+    if (!isSingleJob) {
+      for (const j of jobs) {
+        if (j?.id) window.open(getDownloadAllUrl(j.id), '_blank');
+      }
+      return;
+    }
+    if (jobs[0]?.id) window.open(getDownloadAllUrl(jobs[0].id), '_blank');
+  }, [jobs, isSingleJob]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,7 +86,7 @@ export default function ResultsContainer() {
               convertedSize={file.converted_size ? Number(file.converted_size) : undefined}
               onDownload={
                 file.status === FILE_STATUS.COMPLETED
-                  ? handleDownload(file.id, file.original_name)
+                  ? handleDownload(file.id, file.original_name, file)
                   : undefined
               }
             />
