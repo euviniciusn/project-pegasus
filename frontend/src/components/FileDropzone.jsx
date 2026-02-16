@@ -69,7 +69,7 @@ export default function FileDropzone({ onFilesAdded, fileCount }) {
       </p>
 
       <p className="text-xs text-neutral-400">
-        PNG e JPEG — até 20MB cada — {fileCount}/{MAX_FILES_PER_JOB} arquivos
+        PNG e JPEG — até 10MB cada — {fileCount}/{MAX_FILES_PER_JOB} arquivos
       </p>
 
       <input

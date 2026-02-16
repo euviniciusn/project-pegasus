@@ -7,11 +7,12 @@ import FormatSelector from '../components/FormatSelector.jsx';
 import QualitySlider from '../components/QualitySlider.jsx';
 import ResizeSelector from '../components/ResizeSelector.jsx';
 import ConvertButton from '../components/ConvertButton.jsx';
+import UsageBanner from '../components/UsageBanner.jsx';
 
 export default function UploadContainer() {
   const {
     files, outputFormat, quality, errors, error,
-    isProcessing, isCompleted,
+    isProcessing, isCompleted, limits, remaining,
     resizePreset, customWidth, customHeight, isAspectRatioLocked, fileDimensions,
     addFiles, removeFile, setOutputFormat, setQuality, startConversion,
     setResizePreset, setCustomWidth, setCustomHeight, setIsAspectRatioLocked,
@@ -35,9 +36,12 @@ export default function UploadContainer() {
   const handleRemove = useCallback((index) => () => removeFile(index), [removeFile]);
 
   const hasFiles = files.length > 0;
+  const isLimitExhausted = remaining !== null && remaining <= 0;
 
   return (
     <div className="flex flex-col gap-6">
+      <UsageBanner remaining={remaining} max={limits?.maxConversionsPerDay} />
+
       <FileDropzone onFilesAdded={addFiles} fileCount={files.length} />
 
       {hasFiles && (
@@ -80,7 +84,7 @@ export default function UploadContainer() {
 
           <ConvertButton
             onClick={startConversion}
-            isDisabled={!hasFiles}
+            isDisabled={!hasFiles || isLimitExhausted}
             isProcessing={isProcessing}
             isCompleted={isCompleted}
           />

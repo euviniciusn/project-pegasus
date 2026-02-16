@@ -1,4 +1,5 @@
 import * as jobService from '../services/jobService.js';
+import * as usageLimitService from '../services/usageLimitService.js';
 import config from '../config/index.js';
 import { ValidationError, FileTooLargeError } from '../errors/index.js';
 
@@ -24,13 +25,14 @@ function validateFiles(files) {
     throw new ValidationError('At least one file is required');
   }
 
-  if (files.length > config.upload.maxFilesPerJob) {
+  if (files.length > config.limits.maxFilesPerJob) {
     throw new ValidationError(
-      `Maximum ${config.upload.maxFilesPerJob} files per job (got ${files.length})`,
+      `Máximo de ${config.limits.maxFilesPerJob} arquivos por conversão (enviados: ${files.length})`,
     );
   }
 
   let totalSize = 0;
+  const maxSize = config.limits.maxFileSize;
 
   for (const file of files) {
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
@@ -39,8 +41,8 @@ function validateFiles(files) {
       );
     }
 
-    if (file.size > config.upload.maxFileSize) {
-      throw new FileTooLargeError(file.size, config.upload.maxFileSize);
+    if (file.size > maxSize) {
+      throw new FileTooLargeError(file.size, maxSize);
     }
 
     totalSize += file.size;
@@ -73,9 +75,21 @@ function validateResizeOptions({ width, height, resizePercent }) {
   }
 }
 
+async function checkDailyLimit(sessionToken) {
+  const used = await usageLimitService.getDailyUsage(sessionToken);
+  const max = config.limits.maxConversionsPerDay;
+
+  if (used >= max) {
+    throw new ValidationError(
+      `Limite diário de ${max} conversões atingido. Tente novamente amanhã.`,
+    );
+  }
+}
+
 export async function createJob(request, reply) {
   const { files, outputFormat, quality, width, height, resizePercent } = request.body;
 
+  await checkDailyLimit(request.sessionToken);
   validateFiles(files);
   validateOutputFormat(outputFormat);
   validateResizeOptions({ width, height, resizePercent });
@@ -89,6 +103,8 @@ export async function createJob(request, reply) {
     resizeHeight: height,
     resizePercent,
   });
+
+  await usageLimitService.incrementDailyUsage(request.sessionToken);
 
   return reply.status(201).send({
     success: true,

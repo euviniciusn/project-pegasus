@@ -2,9 +2,9 @@ export const ACCEPTED_INPUT_FORMATS = ['image/png', 'image/jpeg'];
 
 export const OUTPUT_FORMATS = ['webp', 'png', 'jpg', 'avif'];
 
-export const MAX_FILE_SIZE = 20 * 1024 * 1024;
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-export const MAX_FILES_PER_JOB = 20;
+export const MAX_FILES_PER_JOB = 5;
 
 export const DEFAULT_QUALITY = 82;
 

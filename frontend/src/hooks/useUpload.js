@@ -13,7 +13,7 @@ function validateFile(file) {
   }
   if (file.size > MAX_FILE_SIZE) {
     const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-    return `"${file.name}": excede 20MB (${sizeMB}MB)`;
+    return `"${file.name}": excede 10MB (${sizeMB}MB)`;
   }
   return null;
 }

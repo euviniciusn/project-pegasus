@@ -8,6 +8,8 @@ import config from './config/index.js';
 import sessionPlugin from './middleware/session.js';
 import errorHandlerPlugin from './middleware/errorHandler.js';
 import jobRoutes from './routes/jobRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import limitsRoutes from './routes/limitsRoutes.js';
 import { checkHealth } from './services/healthService.js';
 
 const isDev = config.server.nodeEnv === 'development';
@@ -48,7 +50,7 @@ await app.register(cors, {
   origin: config.server.allowedOrigins.split(','),
   credentials: true,
   methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Cookie', 'X-Admin-Key'],
 });
 
 await app.register(cookie, {
@@ -69,6 +71,8 @@ await app.register(rateLimit, {
 await app.register(errorHandlerPlugin);
 await app.register(sessionPlugin);
 await app.register(jobRoutes, { prefix: '/api/jobs' });
+await app.register(adminRoutes, { prefix: '/api/admin' });
+await app.register(limitsRoutes, { prefix: '/api/limits' });
 
 app.get('/health', { config: { rateLimit: false } }, async () => {
   const services = await checkHealth();

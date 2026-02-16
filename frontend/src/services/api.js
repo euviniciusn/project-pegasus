@@ -76,3 +76,7 @@ export async function getDownloadUrl(jobId, fileId) {
 export function getDownloadAllUrl(jobId) {
   return `${BASE_URL}/jobs/${jobId}/download-all`;
 }
+
+export async function getLimits() {
+  return request('GET', '/limits');
+}

@@ -6,6 +6,7 @@ import { convertImage } from '../services/conversionService.js';
 import { downloadFile, uploadFile } from '../storage/objectStorage.js';
 import * as jobRepo from '../repositories/jobRepository.js';
 import * as jobFileRepo from '../repositories/jobFileRepository.js';
+import * as analyticsRepo from '../repositories/analyticsRepository.js';
 
 const QUEUE_NAME = 'image-conversion';
 
@@ -69,6 +70,16 @@ async function processConversion(job) {
     savingsPercent: `${savingsPercent}%`,
     outputKey,
   }, 'Conversion completed');
+
+  analyticsRepo.logConversionEvent({
+    inputFormat: file.original_format,
+    outputFormat,
+    inputSize,
+    outputSize,
+    savingsPercent: parseFloat(savingsPercent),
+    durationMs,
+    quality: options?.quality ?? config.conversion.defaultQuality,
+  }).catch((err) => log.warn({ err }, 'Failed to log analytics event'));
 }
 
 async function handleFailure(job, err) {

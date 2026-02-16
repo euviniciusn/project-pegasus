@@ -63,6 +63,16 @@ const config = {
     avifSpeed: parseInt(process.env.AVIF_SPEED, 10) || 5,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || Math.max(2, cpuCount - 1),
   },
+
+  limits: {
+    maxConversionsPerDay: parseInt(process.env.MAX_CONVERSIONS_PER_DAY, 10) || 20,
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE_FREE, 10) || 10 * 1024 * 1024,
+    maxFilesPerJob: parseInt(process.env.MAX_FILES_PER_JOB_FREE, 10) || 5,
+  },
+
+  admin: {
+    key: process.env.ADMIN_KEY || null,
+  },
 };
 
 export default config;

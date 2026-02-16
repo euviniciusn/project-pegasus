@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import useUpload from '../hooks/useUpload.js';
 import useJob from '../hooks/useJob.js';
 import useFileUploader from '../hooks/useFileUploader.js';
+import useLimits from '../hooks/useLimits.js';
 import { getDownloadUrl as apiGetDownloadUrl } from '../services/api.js';
 import { UPLOAD_STATUS } from '../constants/index.js';
 
@@ -12,6 +13,7 @@ export function JobProvider({ children }) {
   const upload = useUpload();
   const jobHook = useJob();
   const fileUploader = useFileUploader();
+  const limitsHook = useLimits();
   const uploadUrlsRef = useRef([]);
   const [isUploadPhase, setIsUploadPhase] = useState(false);
 
@@ -27,11 +29,12 @@ export function JobProvider({ children }) {
       uploadUrlsRef.current = uploadUrls;
       setIsUploadPhase(true);
       fileUploader.startAllUploads(uploadUrls, upload.files);
+      limitsHook.refresh();
     } catch (err) {
       // createAndPrepare already sets error state in useJob
     }
   }, [
-    jobHook, fileUploader, upload.files, upload.outputFormat, upload.quality,
+    jobHook, fileUploader, limitsHook, upload.files, upload.outputFormat, upload.quality,
     upload.resizePreset, upload.customWidth, upload.customHeight,
   ]);
 
@@ -93,6 +96,8 @@ export function JobProvider({ children }) {
     isProcessing: jobHook.isProcessing,
     isCompleted: jobHook.isCompleted,
     error: jobHook.error,
+    limits: limitsHook.limits,
+    remaining: limitsHook.remaining,
     addFiles: upload.addFiles,
     removeFile: upload.removeFile,
     setOutputFormat: upload.setOutputFormat,
@@ -118,7 +123,7 @@ export function JobProvider({ children }) {
     fileUploader.allCompleted, fileUploader.hasFailures,
     fileUploader.retryUpload, fileUploader.cancelUpload,
     jobHook.job, jobHook.files, jobHook.previews, jobHook.isProcessing,
-    jobHook.isCompleted, jobHook.error,
+    jobHook.isCompleted, jobHook.error, limitsHook.limits, limitsHook.remaining,
     startConversion, confirmWithFailures, reset, getDownloadUrl,
   ]);
 
