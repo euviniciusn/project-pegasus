@@ -21,12 +21,12 @@ const s3 = new S3Client({
   forcePathStyle: true,
 });
 
-const s3Public = new S3Client({
-  endpoint: config.minio.publicUrl,
-  region: 'us-east-1',
-  credentials,
-  forcePathStyle: true,
-});
+const internalBase = `${protocol}://${endpoint}:${port}`;
+const publicBase = config.minio.publicUrl;
+
+function toPublicUrl(url) {
+  return url.replace(internalBase, publicBase);
+}
 
 function wrapError(action, key, err) {
   if (err instanceof StorageError) throw err;
@@ -74,9 +74,10 @@ export async function deleteFiles(keys) {
 
 export async function getPresignedUploadUrl(key, contentType, expiresIn = config.minio.presignedUrlExpiry) {
   try {
-    return await getSignedUrl(s3Public, new PutObjectCommand({
+    const url = await getSignedUrl(s3, new PutObjectCommand({
       Bucket: bucket, Key: key, ContentType: contentType,
     }), { expiresIn });
+    return toPublicUrl(url);
   } catch (err) {
     wrapError('generate upload URL for', key, err);
   }
@@ -84,9 +85,10 @@ export async function getPresignedUploadUrl(key, contentType, expiresIn = config
 
 export async function getPresignedDownloadUrl(key, expiresIn = config.minio.presignedUrlExpiry) {
   try {
-    return await getSignedUrl(s3Public, new GetObjectCommand({
+    const url = await getSignedUrl(s3, new GetObjectCommand({
       Bucket: bucket, Key: key,
     }), { expiresIn });
+    return toPublicUrl(url);
   } catch (err) {
     wrapError('generate download URL for', key, err);
   }
